@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.quill {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.quill .ql-container {
+	flex: 1;
+	overflow: auto;
+}
+
+.quill .ql-toolbar {
+	background: white;
+	border-top-left-radius: 0.5rem;
+	border-top-right-radius: 0.5rem;
+}
+
+.quill .ql-container {
+	border-bottom-left-radius: 0.5rem;
+	border-bottom-right-radius: 0.5rem;
+}
+
+.ql-editor {
+	font-size: 18px !important;
+}
+
+.ql-editor p {
+	font-size: 18px !important;
+}
+
+.ql-editor h1 {
+	font-size: 32px !important;
+}
+
+.ql-editor h2 {
+	font-size: 24px !important;
+}
+
+.ql-editor strong {
+	font-weight: bold;
+}
