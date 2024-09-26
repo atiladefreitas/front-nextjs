@@ -26,6 +26,8 @@ const Login = () => {
 				const userMetadata = data.user.user_metadata;
 				localStorage.setItem("userMetadata", JSON.stringify(userMetadata));
 
+				console.log(data);
+
 				// Optionally, you can also store other user information
 				localStorage.setItem("userId", data.user.id);
 				localStorage.setItem("userEmail", data.user.email);

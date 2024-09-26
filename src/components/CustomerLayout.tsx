@@ -5,38 +5,16 @@ import {
 	Typography,
 	Button,
 	Dialog,
-	Input,
-	Radio,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Calendar, Percent, Edit } from "lucide-react";
-import dynamic from "next/dynamic";
-import "react-quill/dist/quill.snow.css";
-import { format, parse, isValid } from "date-fns";
+import { Calendar, Percent, Ticket, X } from "lucide-react";
 import { formatDate } from "@/utils/FormatDate";
-import { DateInput } from "../components/DateInput";
-import "react-day-picker/dist/style.css";
 
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
-
-interface IEstablishmentLayout {
+interface ICustomerLayout {
 	children: React.ReactNode;
 }
 
-interface Coupon {
-	id: string;
-	title: string;
-	description: string;
-	value: number;
-	type: "value" | "percentage";
-	amount: number;
-	startPromotionDate: Date | null;
-	expirationDate: Date | null;
-	created_at?: Date;
-	establishment?: object;
-}
-
-interface EstablishmentInfo {
+interface Establishment {
 	id: string;
 	name: string;
 	email: string;
@@ -45,63 +23,32 @@ interface EstablishmentInfo {
 	role: string;
 }
 
-const modules = {
-	toolbar: [
-		["bold", "italic", "underline", "strike"],
-		[{ list: "ordered" }, { list: "bullet" }],
-		["clean"],
-	],
-};
+interface CouponTemplate {
+	id: string;
+	title: string;
+	description: string;
+	value: number;
+	type: "value" | "percentage";
+	amount: number;
+	startPromotionDate: string;
+	expirationDate: string;
+	created_at?: Date;
+	establishment: string; // JSON string
+}
 
-const formats = ["header", "bold", "italic", "underline", "strike"];
-
-const quillStyle = {
-	".ql-editor": {
-		fontSize: "18px",
-	},
-	".ql-editor p": {
-		fontSize: "18px",
-	},
-};
-
-function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
-	const [open, setOpen] = useState(false);
-	const [coupons, setCoupons] = useState<Coupon[]>([]);
-	const [formData, setFormData] = useState<Coupon>({
-		id: "",
-		title: "",
-		description: "",
-		value: 0,
-		type: "value",
-		amount: 0,
-		startPromotionDate: null,
-		expirationDate: null,
-	});
-	const [isEditing, setIsEditing] = useState(false);
+function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
+	const [couponTemplates, setCouponTemplates] = useState<CouponTemplate[]>([]);
+	const [selectedCoupon, setSelectedCoupon] = useState<CouponTemplate | null>(
+		null,
+	);
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const supabase = useSupabaseClient();
-	const [establishmentInfo, setEstablishmentInfo] =
-		useState<EstablishmentInfo | null>(null);
 
 	useEffect(() => {
-		fetchCoupons();
-		fetchEstablishmentInfo();
+		fetchCouponTemplates();
 	}, []);
 
-	const fetchEstablishmentInfo = () => {
-		const userMetadata = JSON.parse(
-			localStorage.getItem("userMetadata") || "{}",
-		);
-		setEstablishmentInfo({
-			id: userMetadata.sub,
-			name: userMetadata.name,
-			email: userMetadata.email,
-			phone: userMetadata.phone,
-			document: userMetadata.document,
-			role: userMetadata.role,
-		});
-	};
-
-	const fetchCoupons = async () => {
+	const fetchCouponTemplates = async () => {
 		try {
 			const { data, error } = await supabase
 				.from("couponTemplate")
@@ -109,266 +56,226 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				.order("created_at", { ascending: false });
 
 			if (error) throw error;
-			setCoupons(data || []);
+			setCouponTemplates(data || []);
 		} catch (error) {
-			console.error("Error fetching coupons:", error);
-			alert("Failed to fetch coupons: " + error.message);
+			console.error("Error fetching coupon templates:", error);
+			alert("Failed to fetch coupon templates: " + error.message);
 		}
 	};
 
-	const handleOpen = (coupon?: Coupon) => {
-		if (coupon) {
-			setFormData({
-				...coupon,
-				startPromotionDate: coupon.startPromotionDate
-					? new Date(coupon.startPromotionDate)
-					: null,
-				expirationDate: coupon.expirationDate
-					? new Date(coupon.expirationDate)
-					: null,
-			});
-			setIsEditing(true);
+	const formatValue = (coupon: CouponTemplate) => {
+		if (coupon.type === "value") {
+			return `R$ ${coupon.value.toFixed(2)}`;
 		} else {
-			setFormData({
-				id: "",
-				title: "",
-				description: "",
-				value: 0,
-				type: "value",
-				amount: 0,
-				startPromotionDate: null,
-				expirationDate: null,
-			});
-			setIsEditing(false);
+			return `${coupon.value}%`;
 		}
-		setOpen(true);
 	};
 
-	const handleClose = () => {
-		setOpen(false);
-		setIsEditing(false);
+	const handleCouponClick = (coupon: CouponTemplate) => {
+		setSelectedCoupon(coupon);
+		setIsDialogOpen(true);
 	};
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData({ ...formData, [name]: value });
+	const handleCloseDialog = () => {
+		setIsDialogOpen(false);
+		setSelectedCoupon(null);
 	};
 
-	const handleDescriptionChange = (content: string) => {
-		setFormData({ ...formData, description: content });
-	};
-
-	const handleTypeChange = (value: "value" | "percentage") => {
-		setFormData({ ...formData, type: value });
-	};
-
-	const handleDateChange = (
-		date: Date | null,
-		name: "startPromotionDate" | "expirationDate",
-	) => {
-		setFormData({ ...formData, [name]: date });
-	};
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const getEstablishmentName = (establishmentJson: string): string => {
 		try {
-			const couponData = {
-				...formData,
-				startPromotionDate: formData.startPromotionDate
-					? format(formData.startPromotionDate, "yyyy-MM-dd")
-					: null,
-				expirationDate: formData.expirationDate
-					? format(formData.expirationDate, "yyyy-MM-dd")
-					: null,
-				establishment: establishmentInfo
-					? JSON.stringify({
-							id: establishmentInfo.id,
-							name: establishmentInfo.name,
-							email: establishmentInfo.email,
-							phone: establishmentInfo.phone,
-							document: establishmentInfo.document,
-							role: establishmentInfo.role,
-						})
-					: null,
-			};
-
-			if (isEditing) {
-				const { error } = await supabase
-					.from("couponTemplate")
-					.update(couponData)
-					.eq("id", formData.id);
-
-				if (error) throw error;
-				alert("Coupon updated successfully!");
-			} else {
-				const { error } = await supabase
-					.from("couponTemplate")
-					.insert([{ ...couponData, id: crypto.randomUUID() }]);
-
-				if (error) throw error;
-				alert("Coupon created successfully!");
-			}
-
-			handleClose();
-			fetchCoupons(); // Refresh the coupons list
+			const establishment: Establishment = JSON.parse(establishmentJson);
+			return establishment.name;
 		} catch (error) {
-			console.error("Error saving coupon:", error);
-			alert("Failed to save coupon: " + error.message);
+			console.error("Error parsing establishment JSON:", error);
+			return "Unknown Establishment";
+		}
+	};
+
+	const generateToken = (): string => {
+		const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		let result = "";
+		for (let i = 0; i < 6; i++) {
+			result += characters.charAt(
+				Math.floor(Math.random() * characters.length),
+			);
+		}
+		return result;
+	};
+
+	const handleClaimCoupon = async () => {
+		if (!selectedCoupon) return;
+
+		const userId = localStorage.getItem("userId");
+		const userEmail = localStorage.getItem("userEmail");
+		const userMetadata = JSON.parse(
+			localStorage.getItem("userMetadata") || "{}",
+		);
+		const userPhone = userMetadata.phone;
+
+		if (!userId || !userEmail || !userPhone) {
+			alert("User information is missing. Please make sure you are logged in.");
+			return;
+		}
+
+		const token = generateToken();
+
+		try {
+			// Insert into couponRedeem table
+			const { data: redeemData, error: redeemError } = await supabase
+				.from("couponRedeem")
+				.insert({
+					coupon_id: selectedCoupon.id,
+					amount: selectedCoupon.amount,
+					expirationDate: selectedCoupon.expirationDate,
+					user_id: userId,
+					user_email: userEmail,
+					user_phone: userPhone,
+					token: token,
+				});
+
+			if (redeemError) throw redeemError;
+
+			// Update couponTemplate
+			const { error: updateError } = await supabase
+				.from("couponTemplate")
+				.update({ amount: selectedCoupon.amount - 1 })
+				.eq("id", selectedCoupon.id);
+
+			if (updateError) throw updateError;
+
+			alert(`Coupon claimed successfully! Your token is: ${token}`);
+			handleCloseDialog();
+			fetchCouponTemplates(); // Refresh the coupon list
+		} catch (error) {
+			console.error("Error claiming coupon:", error);
+			alert("Failed to claim coupon: " + error.message);
 		}
 	};
 
 	return (
-		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
-			<Navbar className="max-w-7xl mb-4">{children}</Navbar>
-			<main className="w-full max-w-7xl grid grid-cols-2 gap-4 h-full">
-				<Card className="establishments-list p-4">
-					<Typography variant="h5" color="blue-gray" className="mb-4">
-						Cupons criados
-					</Typography>
-					{coupons.map((coupon) => (
-						<div key={coupon.id} className="border mb-2 rounded-xl p-4">
-							<div className="flex justify-between items-start">
+		<div className="customer-layout bg-[#eee] w-screen min-h-screen flex flex-col py-8 items-center">
+			<Navbar className="max-w-xl mb-4">{children}</Navbar>
+			<main className="w-full max-w-xl grid grid-cols-1 gap-4 ">
+				<Typography variant="h4" color="blue-gray" className="mb-4">
+					Available Coupons
+				</Typography>
+				{couponTemplates.map((coupon) => (
+					<Card
+						key={coupon.id}
+						className="p-4 mb-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all"
+						onClick={() => handleCouponClick(coupon)}
+					>
+						<div className="flex justify-between items-start">
+							<div>
 								<Typography variant="h5">{coupon.title}</Typography>
-								<Button
-									size="sm"
-									color="blue"
-									variant="text"
-									className="p-2"
-									onClick={() => handleOpen(coupon)}
-								>
-									<Edit size={16} />
-								</Button>
+								<Typography variant="small" color="gray" className="mt-1">
+									{getEstablishmentName(coupon.establishment)}
+								</Typography>
 							</div>
-							<div className="w-full h-[2rem]">
-								<span className="flex items-center text-sm gap-2 mt-2">
-									<Calendar size={18} />
-									Criado em: {formatDate(coupon.created_at)}
-								</span>
-							</div>
+							<Typography
+								variant="h6"
+								color={coupon.type === "value" ? "green" : "blue"}
+								className="font-bold"
+							>
+								{formatValue(coupon)}
+							</Typography>
 						</div>
-					))}
-					<Button onClick={() => handleOpen()} className="mt-4">
-						Create Coupon
-					</Button>
-				</Card>
-				<Card className="establishments-list p-4">
-					<Typography variant="h5" color="blue-gray" className="mb-4">
-						Resgatou recentemente
-					</Typography>
-				</Card>
+						<div
+							key={coupon.id}
+							dangerouslySetInnerHTML={{ __html: coupon.description }}
+						/>
+						<div className="flex gap-4 items-center mt-4">
+							<span className="flex items-center text-sm gap-2">
+								<Calendar size={16} />
+								Valid until: {formatDate(coupon.expirationDate)}
+							</span>
+
+							<span className="flex items-center text-sm gap-2">
+								<Ticket size={16} />
+								{coupon.amount}
+							</span>
+						</div>
+					</Card>
+				))}
 			</main>
 
-			<Dialog size="xs" open={open} handler={handleClose}>
-				<Card className="mx-auto w-full" shadow={false}>
-					<form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
-						<Typography variant="h4" color="blue-gray">
-							{isEditing ? "Edit Coupon" : "Create New Coupon"}
-						</Typography>
-						<Input
-							crossOrigin={""}
-							label="Title"
-							name="title"
-							value={formData.title}
-							onChange={handleInputChange}
-						/>
-						<div className="mb-2">
-							<Typography color="blue-gray" className="font-medium mb-2">
-								Descrição
+			<Dialog
+				size="xs"
+				open={isDialogOpen}
+				handler={handleCloseDialog}
+				className="bg-white p-8"
+			>
+				{selectedCoupon && (
+					<Card className="mx-auto w-full" shadow={false}>
+						<div className="flex items-center justify-between">
+							<Typography variant="h5" color="blue-gray">
+								Detalhes
 							</Typography>
-							<div className="h-52">
-								<ReactQuill
-									theme="snow"
-									value={formData.description}
-									modules={modules}
-									formats={formats}
-									onChange={handleDescriptionChange}
-									className="h-full"
-									style={quillStyle}
-								/>
+							<Button
+								variant="text"
+								color="blue-gray"
+								onClick={handleCloseDialog}
+								className="p-2"
+							>
+								<X size={20} />
+							</Button>
+						</div>
+						<div className="mt-4">
+							<Typography variant="h4" color="blue-gray">
+								{selectedCoupon.title}
+							</Typography>
+							<Typography variant="small" color="gray" className="mt-1">
+								{getEstablishmentName(selectedCoupon.establishment)}
+							</Typography>
+							<Typography
+								variant="h5"
+								color={selectedCoupon.type === "value" ? "green" : "blue"}
+								className="font-bold mt-2"
+							>
+								{formatValue(selectedCoupon)}
+							</Typography>
+
+							<div
+								key={selectedCoupon.id}
+								dangerouslySetInnerHTML={{ __html: selectedCoupon.description }}
+							/>
+							<div className="mt-4">
+								<Typography variant="small" className="flex items-center gap-2">
+									<Calendar size={16} />
+									Start Date: {formatDate(selectedCoupon.startPromotionDate)}
+								</Typography>
+								<Typography
+									variant="small"
+									className="flex items-center gap-2 mt-1"
+								>
+									<Calendar size={16} />
+									Expiration Date: {formatDate(selectedCoupon.expirationDate)}
+								</Typography>
+							</div>
+							<div className="w-full bg-orange-50 p-2 mt-2 border border-orange-700 rounded-md flex items-center justify-center">
+								<Typography
+									variant="small"
+									className="text-orange-800 font-bold"
+								>
+									RESTAM APENAS {selectedCoupon.amount} CUPONS
+								</Typography>
 							</div>
 						</div>
-						<div className="items-center gap-4 grid grid-cols-2">
-							<Typography
-								color="blue-gray"
-								className="font-medium col-span-2 -mb-4"
-							>
-								Tipo:
-							</Typography>
-							<Radio
-								crossOrigin={""}
-								name="type"
-								label="Valor"
-								checked={formData.type === "value"}
-								onChange={() => handleTypeChange("value")}
-							/>
-							<Radio
-								crossOrigin={""}
-								name="type"
-								label="Porcentagem"
-								checked={formData.type === "percentage"}
-								onChange={() => handleTypeChange("percentage")}
-							/>
-						</div>
-						<div className="relative flex items-center justify-center">
-							{formData.type === "value" && (
-								<div className="h-[2.5rem] bg-gray-200 w-[3rem] flex items-center justify-center rounded-l-md border-l border-[#c4c4c4] border-t border-b">
-									<span className="font-semibold">R$</span>
-								</div>
-							)}
-							<Input
-								crossOrigin={""}
-								label="Value"
-								name="value"
-								type="number"
-								value={formData.value}
-								onChange={handleInputChange}
-								className={
-									formData.type === "value"
-										? "rounded-l-none"
-										: "rounded-r-none"
-								}
-							/>
-							{formData.type === "percentage" && (
-								<div className="h-[2.5rem] bg-gray-200 w-fit px-3 flex items-center justify-center rounded-r-md border-r border-[#c4c4c4] border-t border-b">
-									<span className="flex items-center gap-1 font-semibold">
-										<Percent size={18} />
-										OFF
-									</span>
-								</div>
-							)}
-						</div>
-						<Input
-							crossOrigin={""}
-							label="Amount"
-							name="amount"
-							type="number"
-							value={formData.amount}
-							onChange={handleInputChange}
-						/>
-						<span className="w-full flex gap-4">
-							<DateInput
-								label="Start Promotion Date"
-								name="startPromotionDate"
-								selected={formData.startPromotionDate}
-								onChange={(date) =>
-									handleDateChange(date, "startPromotionDate")
-								}
-							/>
-							<DateInput
-								label="Expiration Date"
-								name="expirationDate"
-								selected={formData.expirationDate}
-								onChange={(date) => handleDateChange(date, "expirationDate")}
-							/>
-						</span>
-						<Button type="submit">
-							{isEditing ? "Update Coupon" : "Create Coupon"}
+						<Button
+							size="lg"
+							color="green"
+							variant="gradient"
+							className="mt-6 flex items-center justify-center"
+							fullWidth
+							onClick={handleClaimCoupon}
+						>
+							Resgatar cupom <Ticket />
 						</Button>
-					</form>
-				</Card>
+					</Card>
+				)}
 			</Dialog>
 		</div>
 	);
 }
 
-export default EstablishmentLayout;
+export default CustomerLayout;

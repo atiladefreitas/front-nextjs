@@ -9,11 +9,14 @@ import {
 	Radio,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Calendar, Percent, Edit } from "lucide-react";
+import { Calendar, Percent, Edit, TicketPlusIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
-import { format, parse } from "date-fns";
+import { format, parse, isValid } from "date-fns";
 import { formatDate } from "@/utils/FormatDate";
+import { DayPicker } from "react-day-picker";
+import { DateInput } from "@/components/DateInput";
+import "react-day-picker/dist/style.css";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -28,9 +31,19 @@ interface Coupon {
 	value: number;
 	type: "value" | "percentage";
 	amount: number;
-	startPromotionDate: string;
-	expirationDate: string;
-	created_at?: Date | string;
+	startPromotionDate: Date | null;
+	expirationDate: Date | null;
+	created_at?: Date;
+	establishment?: object;
+}
+
+interface EstablishmentInfo {
+	id: string;
+	name: string;
+	email: string;
+	phone: string;
+	document: string;
+	role: string;
 }
 
 const modules = {
@@ -62,15 +75,32 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 		value: 0,
 		type: "value",
 		amount: 0,
-		startPromotionDate: "",
-		expirationDate: "",
+		startPromotionDate: null,
+		expirationDate: null,
 	});
 	const [isEditing, setIsEditing] = useState(false);
 	const supabase = useSupabaseClient();
+	const [establishmentInfo, setEstablishmentInfo] =
+		useState<EstablishmentInfo | null>(null);
 
 	useEffect(() => {
 		fetchCoupons();
+		fetchEstablishmentInfo();
 	}, []);
+
+	const fetchEstablishmentInfo = () => {
+		const userMetadata = JSON.parse(
+			localStorage.getItem("userMetadata") || "{}",
+		);
+		setEstablishmentInfo({
+			id: userMetadata.sub,
+			name: userMetadata.name,
+			email: userMetadata.email,
+			phone: userMetadata.phone,
+			document: userMetadata.document,
+			role: userMetadata.role,
+		});
+	};
 
 	const fetchCoupons = async () => {
 		try {
@@ -89,7 +119,15 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 
 	const handleOpen = (coupon?: Coupon) => {
 		if (coupon) {
-			setFormData(coupon);
+			setFormData({
+				...coupon,
+				startPromotionDate: coupon.startPromotionDate
+					? new Date(coupon.startPromotionDate)
+					: null,
+				expirationDate: coupon.expirationDate
+					? new Date(coupon.expirationDate)
+					: null,
+			});
 			setIsEditing(true);
 		} else {
 			setFormData({
@@ -99,8 +137,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				value: 0,
 				type: "value",
 				amount: 0,
-				startPromotionDate: "",
-				expirationDate: "",
+				startPromotionDate: null,
+				expirationDate: null,
 			});
 			setIsEditing(false);
 		}
@@ -114,12 +152,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
-		if (name === "startPromotionDate" || name === "expirationDate") {
-			const parsedDate = parse(value, "dd/MM/yyyy", new Date());
-			setFormData({ ...formData, [name]: format(parsedDate, "yyyy-MM-dd") });
-		} else {
-			setFormData({ ...formData, [name]: value });
-		}
+		setFormData({ ...formData, [name]: value });
 	};
 
 	const handleDescriptionChange = (content: string) => {
@@ -130,26 +163,48 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 		setFormData({ ...formData, type: value });
 	};
 
+	const handleDateChange = (
+		date: Date | null,
+		name: "startPromotionDate" | "expirationDate",
+	) => {
+		setFormData({ ...formData, [name]: date });
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		try {
+			const couponData = {
+				...formData,
+				startPromotionDate: formData.startPromotionDate
+					? format(formData.startPromotionDate, "yyyy-MM-dd")
+					: null,
+				expirationDate: formData.expirationDate
+					? format(formData.expirationDate, "yyyy-MM-dd")
+					: null,
+				establishment: establishmentInfo
+					? JSON.stringify({
+							id: establishmentInfo.id,
+							name: establishmentInfo.name,
+							email: establishmentInfo.email,
+							phone: establishmentInfo.phone,
+							document: establishmentInfo.document,
+							role: establishmentInfo.role,
+						})
+					: null,
+			};
+
 			if (isEditing) {
 				const { error } = await supabase
 					.from("couponTemplate")
-					.update(formData)
+					.update(couponData)
 					.eq("id", formData.id);
 
 				if (error) throw error;
 				alert("Coupon updated successfully!");
 			} else {
-				const newCoupon = {
-					...formData,
-					id: crypto.randomUUID(),
-				};
-
 				const { error } = await supabase
 					.from("couponTemplate")
-					.insert([newCoupon]);
+					.insert([{ ...couponData, id: crypto.randomUUID() }]);
 
 				if (error) throw error;
 				alert("Coupon created successfully!");
@@ -166,6 +221,17 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	return (
 		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
 			<Navbar className="max-w-7xl mb-4">{children}</Navbar>
+			<div className="w-full mb-4">
+				<Button
+					color="green"
+					variant="gradient"
+					onClick={() => handleOpen()}
+					className="flex items-center  gap-2"
+				>
+					<TicketPlusIcon />
+					Criar cupom
+				</Button>
+			</div>
 			<main className="w-full max-w-7xl grid grid-cols-2 gap-4 h-full">
 				<Card className="establishments-list p-4">
 					<Typography variant="h5" color="blue-gray" className="mb-4">
@@ -193,9 +259,6 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 							</div>
 						</div>
 					))}
-					<Button onClick={() => handleOpen()} className="mt-4">
-						Create Coupon
-					</Button>
 				</Card>
 				<Card className="establishments-list p-4">
 					<Typography variant="h5" color="blue-gray" className="mb-4">
@@ -212,7 +275,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 						</Typography>
 						<Input
 							crossOrigin={""}
-							label="Title"
+							label="Titulo"
 							name="title"
 							value={formData.title}
 							onChange={handleInputChange}
@@ -263,7 +326,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 							)}
 							<Input
 								crossOrigin={""}
-								label="Value"
+								label="Valor"
 								name="value"
 								type="number"
 								value={formData.value}
@@ -285,56 +348,30 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 						</div>
 						<Input
 							crossOrigin={""}
-							label="Amount"
+							label="Quantidade"
 							name="amount"
 							type="number"
 							value={formData.amount}
 							onChange={handleInputChange}
 						/>
 						<span className="w-full flex gap-4">
-							<Input
-								crossOrigin={""}
-								label="Start Promotion Date"
+							<DateInput
+								label="Início da promoção"
 								name="startPromotionDate"
-								type="text"
-								placeholder="DD/MM/YYYY"
-								value={
-									formData.startPromotionDate
-										? format(
-												parse(
-													formData.startPromotionDate,
-													"yyyy-MM-dd",
-													new Date(),
-												),
-												"dd/MM/yyyy",
-											)
-										: ""
+								selected={formData.startPromotionDate}
+								onChange={(date) =>
+									handleDateChange(date, "startPromotionDate")
 								}
-								onChange={handleInputChange}
 							/>
-							<Input
-								crossOrigin={""}
-								label="Expiration Date"
+							<DateInput
+								label="Data de expiração"
 								name="expirationDate"
-								type="text"
-								placeholder="DD/MM/YYYY"
-								value={
-									formData.expirationDate
-										? format(
-												parse(
-													formData.expirationDate,
-													"yyyy-MM-dd",
-													new Date(),
-												),
-												"dd/MM/yyyy",
-											)
-										: ""
-								}
-								onChange={handleInputChange}
+								selected={formData.expirationDate}
+								onChange={(date) => handleDateChange(date, "expirationDate")}
 							/>
 						</span>
-						<Button type="submit">
-							{isEditing ? "Update Coupon" : "Create Coupon"}
+						<Button type="submit" color="blue" variant="gradient">
+							{isEditing ? "Atualizar cupom" : "Criar cupom"}
 						</Button>
 					</form>
 				</Card>

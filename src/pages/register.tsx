@@ -48,7 +48,7 @@ const Register = () => {
 						birthday,
 						document,
 						phone,
-						role: "admin",
+						role: "customer",
 					},
 				},
 			});
