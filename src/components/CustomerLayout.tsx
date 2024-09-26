@@ -122,14 +122,19 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 		const userMetadata = JSON.parse(
 			localStorage.getItem("userMetadata") || "{}",
 		);
+
+		const userName = userMetadata.name;
 		const userPhone = userMetadata.phone;
 
-		if (!userId || !userEmail || !userPhone) {
+		if (!userId || !userEmail || !userPhone || !userName) {
 			alert("User information is missing. Please make sure you are logged in.");
 			return;
 		}
 
 		const token = generateToken();
+
+		const establishmentData = JSON.parse(selectedCoupon.establishment);
+		console.log("Establishment ID:", establishmentData.id);
 
 		try {
 			const { data: redeemData, error: redeemError } = await supabase
@@ -140,8 +145,10 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 					expirationDate: selectedCoupon.expirationDate,
 					user_id: userId,
 					user_email: userEmail,
+					user_name: userName,
 					user_phone: userPhone,
 					token: token,
+					establishment_id: establishmentData.id,
 				});
 
 			if (redeemError) throw redeemError;

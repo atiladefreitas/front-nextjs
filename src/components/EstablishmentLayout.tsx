@@ -7,6 +7,7 @@ import {
 	Dialog,
 	Input,
 	Radio,
+	Chip,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import {
@@ -16,6 +17,8 @@ import {
 	TicketPlusIcon,
 	Ticket,
 	ScanEye,
+	CalendarDays,
+	Badge,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
@@ -76,6 +79,7 @@ const quillStyle = {
 function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	const [open, setOpen] = useState(false);
 	const [coupons, setCoupons] = useState<Coupon[]>([]);
+	const [redeemedCoupons, setRedeemedCoupons] = useState<RedeemedCoupon[]>([]);
 	const [formData, setFormData] = useState<Coupon>({
 		id: "",
 		establishmentId: "",
@@ -91,10 +95,17 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	const supabase = useSupabaseClient();
 	const [establishmentInfo, setEstablishmentInfo] =
 		useState<EstablishmentInfo | null>(null);
+	const [isValidateDialogOpen, setIsValidateDialogOpen] = useState(false);
+	const [tokenInput, setTokenInput] = useState("");
+	const [validatedCoupon, setValidatedCoupon] = useState<any>(null);
+	const [validationStep, setValidationStep] = useState<"input" | "confirm">(
+		"input",
+	);
 
 	useEffect(() => {
 		fetchCoupons();
 		fetchEstablishmentInfo();
+		fetchRedeemedCoupons();
 	}, []);
 
 	const fetchEstablishmentInfo = () => {
@@ -231,6 +242,85 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 		}
 	};
 
+	const fetchRedeemedCoupons = async () => {
+		try {
+			const userId = localStorage.getItem("userId");
+			if (!userId) {
+				console.error("User ID not found in localStorage");
+				return;
+			}
+
+			const { data, error } = await supabase
+				.from("couponRedeem")
+				.select("*")
+				.eq("establishment_id", userId)
+				.order("created_at", { ascending: false })
+				.limit(10);
+
+			if (error) throw error;
+			setRedeemedCoupons(data || []);
+		} catch (error) {
+			console.error("Error fetching redeemed coupons:", error);
+			alert("Failed to fetch redeemed coupons: " + error.message);
+		}
+	};
+	const handleValidateCouponClick = () => {
+		setIsValidateDialogOpen(true);
+		setValidationStep("input");
+		setTokenInput("");
+		setValidatedCoupon(null);
+	};
+	const handleTokenInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setTokenInput(e.target.value);
+	};
+	const handleTokenSubmit = async () => {
+		if (tokenInput.length !== 6) {
+			alert("Please enter a valid 6-digit token.");
+			return;
+		}
+
+		try {
+			const { data, error } = await supabase
+				.from("couponRedeem")
+				.select(`*`)
+				.eq("token", tokenInput)
+				.single();
+
+			if (error) throw error;
+
+			if (data) {
+				setValidatedCoupon(data);
+				setValidationStep("confirm");
+			} else {
+				alert("No coupon found with this token.");
+			}
+		} catch (error) {
+			console.error("Error fetching coupon:", error);
+			alert("Failed to fetch coupon: " + error.message);
+		}
+	};
+	const handleCouponAction = async (action: "used" | "expired") => {
+		try {
+			const { error } = await supabase
+				.from("couponRedeem")
+				.update({ status: action })
+				.eq("id", validatedCoupon.id);
+
+			if (error) throw error;
+
+			alert(
+				`Coupon ${action === "used" ? "validated" : "invalidated"} successfully.`,
+			);
+			setIsValidateDialogOpen(false);
+			setValidationStep("input");
+			setValidatedCoupon(null);
+			fetchRedeemedCoupons(); // Refresh the list of redeemed coupons
+		} catch (error) {
+			console.error("Error updating coupon status:", error);
+			alert("Failed to update coupon status: " + error.message);
+		}
+	};
+
 	return (
 		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
 			<Navbar className="max-w-7xl mb-4 flex items-center justify-end">
@@ -250,7 +340,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				<Button
 					color="blue-gray"
 					variant="gradient"
-					className="flex items-center  gap-2"
+					className="flex items-center gap-2"
+					onClick={handleValidateCouponClick}
 				>
 					<ScanEye />
 					Validar cupom
@@ -293,6 +384,33 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 					<Typography variant="h5" color="blue-gray" className="mb-4">
 						Resgatou recentemente
 					</Typography>
+					{redeemedCoupons.map((coupon) => (
+						<div key={coupon.id} className="border mb-2 rounded-xl p-4">
+							<span className="flex justify-between">
+								<Typography variant="h6">{coupon.user_name}</Typography>
+								{coupon.status === "used" && (
+									<Chip value="usado" color="green" />
+								)}
+								{coupon.status === "redeem" && (
+									<Chip value="regatado" color="blue" />
+								)}
+
+								{coupon.status === "expired" && (
+									<Chip value="expirado" color="red" />
+								)}
+							</span>
+							<div className="w-full flex gap-4">
+								<span className="flex items-center text-sm gap-2 mt-2">
+									<Calendar size={18} />
+									Resgatado em: {formatDate(coupon.created_at)}
+								</span>
+								<span className="flex items-center text-sm gap-2 mt-2">
+									<Ticket size={18} />
+									{coupon.user_email}
+								</span>
+							</div>
+						</div>
+					))}
 				</Card>
 			</main>
 
@@ -403,6 +521,76 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 							{isEditing ? "Atualizar cupom" : "Criar cupom"}
 						</Button>
 					</form>
+				</Card>
+			</Dialog>
+
+			{/* New Dialog for Coupon Validation */}
+			<Dialog
+				size="xs"
+				open={isValidateDialogOpen}
+				handler={() => setIsValidateDialogOpen(false)}
+				className="bg-white p-8"
+			>
+				<Card className="mx-auto w-full" shadow={false}>
+					{validationStep === "input" ? (
+						<>
+							<Typography variant="h5" color="blue-gray" className="mb-4">
+								Validar Cupom
+							</Typography>
+							<Input
+								crossOrigin={""}
+								label="Token do Cupom (6 dígitos)"
+								value={tokenInput}
+								onChange={handleTokenInputChange}
+								className="mb-4"
+							/>
+							<Button onClick={handleTokenSubmit} color="blue" fullWidth>
+								Verificar
+							</Button>
+						</>
+					) : (
+						<>
+							<Typography variant="h5" color="blue-gray" className="mb-4">
+								Validar Cupom
+							</Typography>
+							<Typography variant="h5">
+								{validatedCoupon?.user_name || "N/A"}
+							</Typography>
+							<Typography variant="paragraph">
+								{validatedCoupon?.user_email || "N/A"}
+							</Typography>
+							<span className="flex items-center gap-4 mt-2">
+								<Typography
+									variant="paragraph"
+									className="flex items-center gap-2"
+								>
+									<Ticket size={18} /> {validatedCoupon?.amount || "N/A"}
+								</Typography>
+								<Typography
+									variant="paragraph"
+									className="flex items-center gap-2"
+								>
+									<CalendarDays size={18} />
+									{formatDate(validatedCoupon.created_at)}
+								</Typography>
+							</span>
+							<div className="flex justify-between mt-4">
+								<Button
+									onClick={() => handleCouponAction("expired")}
+									variant="outlined"
+									color="red"
+								>
+									Invalidar
+								</Button>
+								<Button
+									onClick={() => handleCouponAction("used")}
+									color="green"
+								>
+									Aprovar
+								</Button>
+							</div>
+						</>
+					)}
 				</Card>
 			</Dialog>
 		</div>

@@ -14,6 +14,7 @@ const LoadingScreen = () => (
 );
 
 const Home = () => {
+	const [loading, setLoading] = useState(true);
 	// useEffect(() => {
 	// 	const timer = setTimeout(() => {
 	// 		setIsLoading(false);
@@ -22,9 +23,13 @@ const Home = () => {
 	// 	return () => clearTimeout(timer);
 	// }, []);
 	//
-	// if (isLoading) {
-	// 	return <LoadingScreen />;
-	// }
+	if (loading) {
+		setTimeout(() => {
+			setLoading(false);
+		}, 200);
+
+		return <LoadingScreen />;
+	}
 	//
 	const session = useSession();
 

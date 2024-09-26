@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Card, Typography, Button } from "@material-tailwind/react";
+import { Card, Typography, Button, Chip } from "@material-tailwind/react";
 import { formatDate } from "@/utils/FormatDate";
 import { useRouter } from "next/router";
 import { Ticket, ArrowLeft, Calendar } from "lucide-react";
@@ -74,9 +74,13 @@ function RedeemedCouponsPage() {
 									ID do Cupom: {coupon.coupon_id}
 								</Typography>
 							</div>
-							<Typography variant="h6" color="blue" className="font-bold">
-								Token: {coupon.token}
-							</Typography>
+							{coupon.status === "used" ? (
+								<Chip value="usado" color="green" />
+							) : (
+								<Typography variant="h6" color="blue" className="font-bold">
+									Token: {coupon.token}
+								</Typography>
+							)}
 						</div>
 						<div className="flex gap-4 items-center mt-4">
 							<span className="flex items-center text-sm gap-2">
