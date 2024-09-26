@@ -29,7 +29,7 @@ const EstablishmentDialog: React.FC<EstablishmentDialogProps> = ({
 }) => {
 	return (
 		<>
-			<Button placeholder="" onClick={handleOpen} size="sm">
+			<Button placeholder="" onClick={handleOpen} color="green">
 				Novo estabelecimento
 			</Button>
 
@@ -47,21 +47,21 @@ const EstablishmentDialog: React.FC<EstablishmentDialogProps> = ({
 						<form onSubmit={handleSubmit} className="gap-4 flex flex-col gap-2">
 							<Input
 								crossOrigin={""}
-								label="Name"
+								label="Nome"
 								name="name"
 								value={formData.name}
 								onChange={handleInputChange}
 							/>
 							<Input
 								crossOrigin={""}
-								label="Document"
+								label="CNPJ"
 								name="document"
 								value={formData.document}
 								onChange={handleInputChange}
 							/>
 							<Input
 								crossOrigin={""}
-								label="Phone"
+								label="Telefone"
 								name="phone"
 								value={formData.phone}
 								onChange={handleInputChange}
@@ -84,14 +84,14 @@ const EstablishmentDialog: React.FC<EstablishmentDialogProps> = ({
 							<div className="flex gap-2">
 								<Input
 									crossOrigin={""}
-									label="City"
+									label="Cidade"
 									name="city"
 									value={formData.city}
 									onChange={handleInputChange}
 								/>
 								<Input
 									crossOrigin={""}
-									label="State"
+									label="Estado"
 									name="state"
 									value={formData.state}
 									onChange={handleInputChange}
@@ -100,7 +100,7 @@ const EstablishmentDialog: React.FC<EstablishmentDialogProps> = ({
 							<div className="flex gap-2">
 								<Input
 									crossOrigin={""}
-									label="Neighborhood"
+									label="Bairro"
 									name="neighborhood"
 									value={formData.neighborhood}
 									onChange={handleInputChange}
@@ -116,14 +116,14 @@ const EstablishmentDialog: React.FC<EstablishmentDialogProps> = ({
 							<div className="flex gap-2">
 								<Input
 									crossOrigin={""}
-									label="Number"
+									label="Numero"
 									name="number"
 									value={formData.number}
 									onChange={handleInputChange}
 								/>
 								<Input
 									crossOrigin={""}
-									label="Complement"
+									label="Complemento"
 									name="complement"
 									value={formData.complement}
 									onChange={handleInputChange}

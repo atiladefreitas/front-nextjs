@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Card, Navbar, Typography } from "@material-tailwind/react";
+import {
+	Card,
+	Navbar,
+	Typography,
+	Button,
+	Dialog,
+	DialogHeader,
+	DialogBody,
+	DialogFooter,
+	Input,
+} from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { Establishment, User, FormData } from "../types";
 import EstablishmentDialog from "../components/dialogs/EstablishmentDialog";
@@ -11,6 +21,8 @@ interface IAdminLayoutProps {
 
 function AdminLayout({ children }: IAdminLayoutProps) {
 	const [open, setOpen] = useState(false);
+	const [inviteOpen, setInviteOpen] = useState(false);
+	const [inviteEmail, setInviteEmail] = useState("");
 	const [establishments, setEstablishments] = useState<Establishment[]>([]);
 	const [users, setUsers] = useState<User[]>([]);
 	const [formData, setFormData] = useState<FormData>({
@@ -30,9 +42,14 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 	const supabase = useSupabaseClient();
 
 	const handleOpen = () => setOpen(!open);
+	const handleInviteOpen = () => setInviteOpen(!inviteOpen);
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setFormData({ ...formData, [e.target.name]: e.target.value });
+	};
+
+	const handleInviteEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setInviteEmail(e.target.value);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -91,6 +108,21 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 		} catch (error) {
 			console.error("Error creating establishment:", error);
 			alert("Failed to add establishment: " + error.message);
+		}
+	};
+
+	const handleInviteSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		try {
+			// Here you would typically send an invitation email
+			// For now, we'll just log the email and close the modal
+			console.log("Invitation sent to:", inviteEmail);
+			setInviteOpen(false);
+			setInviteEmail("");
+			alert("Invitation sent successfully!");
+		} catch (error) {
+			console.error("Error sending invitation:", error);
+			alert("Failed to send invitation: " + error.message);
 		}
 	};
 
@@ -153,6 +185,19 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 	return (
 		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
 			<Navbar className="max-w-7xl mb-4">{children}</Navbar>
+			<div className="w-full h-[3rem]  mb-4 max-w-7xl flex gap-4 items-center px-4">
+				<EstablishmentDialog
+					open={open}
+					handleOpen={handleOpen}
+					formData={formData}
+					handleInputChange={handleInputChange}
+					handleSubmit={handleSubmit}
+					handlePostalCodeChange={handlePostalCodeChange}
+				/>
+				<Button onClick={handleInviteOpen} color="blue">
+					Convidar usuário
+				</Button>
+			</div>
 			<main className="w-full max-w-7xl grid grid-cols-2 gap-4 h-full">
 				<Card className="establishments-list p-4">
 					<Typography variant="h5" color="blue-gray" className="mb-4">
@@ -161,14 +206,6 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 					{establishments.map((establishment) => (
 						<div key={establishment.id}>{establishment.name}</div>
 					))}
-					<EstablishmentDialog
-						open={open}
-						handleOpen={handleOpen}
-						formData={formData}
-						handleInputChange={handleInputChange}
-						handleSubmit={handleSubmit}
-						handlePostalCodeChange={handlePostalCodeChange}
-					/>
 				</Card>
 
 				<Card className="users-list p-4">
@@ -180,6 +217,36 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 					))}
 				</Card>
 			</main>
+
+			{/* Invitation Modal */}
+			<Dialog open={inviteOpen} handler={handleInviteOpen} size="xs">
+				<form onSubmit={handleInviteSubmit}>
+					<DialogHeader>Convidar usuário</DialogHeader>
+					<DialogBody>
+						<Input
+							crossOrigin={""}
+							type="email"
+							label="Email"
+							value={inviteEmail}
+							onChange={handleInviteEmailChange}
+							required
+						/>
+					</DialogBody>
+					<DialogFooter>
+						<Button
+							variant="text"
+							color="red"
+							onClick={handleInviteOpen}
+							className="mr-1"
+						>
+							<span>Cancelar</span>
+						</Button>
+						<Button variant="gradient" color="green" type="submit">
+							<span>Enviar convite</span>
+						</Button>
+					</DialogFooter>
+				</form>
+			</Dialog>
 		</div>
 	);
 }
