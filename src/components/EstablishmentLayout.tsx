@@ -9,7 +9,7 @@ import {
 	Radio,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Calendar, Percent, Edit, TicketPlusIcon } from "lucide-react";
+import { Calendar, Percent, Edit, TicketPlusIcon, Ticket } from "lucide-react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import { format, parse, isValid } from "date-fns";
@@ -35,6 +35,7 @@ interface Coupon {
 	expirationDate: Date | null;
 	created_at?: Date;
 	establishment?: object;
+	establishmentId: string;
 }
 
 interface EstablishmentInfo {
@@ -70,6 +71,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	const [coupons, setCoupons] = useState<Coupon[]>([]);
 	const [formData, setFormData] = useState<Coupon>({
 		id: "",
+		establishmentId: "",
 		title: "",
 		description: "",
 		value: 0,
@@ -92,6 +94,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 		const userMetadata = JSON.parse(
 			localStorage.getItem("userMetadata") || "{}",
 		);
+		const userId = localStorage.getItem("userId");
 		setEstablishmentInfo({
 			id: userMetadata.sub,
 			name: userMetadata.name,
@@ -134,6 +137,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				id: "",
 				title: "",
 				description: "",
+				establishmentId: "",
 				value: 0,
 				type: "value",
 				amount: 0,
@@ -173,8 +177,10 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		try {
+			const userId = localStorage.getItem("userId");
 			const couponData = {
 				...formData,
+				establishmentId: userId,
 				startPromotionDate: formData.startPromotionDate
 					? format(formData.startPromotionDate, "yyyy-MM-dd")
 					: null,
@@ -220,7 +226,9 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 
 	return (
 		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
-			<Navbar className="max-w-7xl mb-4">{children}</Navbar>
+			<Navbar className="max-w-7xl mb-4 flex items-center justify-end">
+				{children}
+			</Navbar>
 			<div className="w-full mb-4">
 				<Button
 					color="green"
@@ -251,10 +259,15 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 									<Edit size={16} />
 								</Button>
 							</div>
-							<div className="w-full h-[2rem]">
+							<div className="w-full h-[2rem] flex gap-4">
 								<span className="flex items-center text-sm gap-2 mt-2">
 									<Calendar size={18} />
 									Criado em: {formatDate(coupon.created_at)}
+								</span>
+
+								<span className="flex items-center text-sm gap-2 mt-2">
+									<Ticket size={18} />
+									{coupon.amount}
 								</span>
 							</div>
 						</div>

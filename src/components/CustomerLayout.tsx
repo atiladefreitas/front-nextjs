@@ -7,8 +7,10 @@ import {
 	Dialog,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Calendar, Percent, Ticket, X } from "lucide-react";
+import { Calendar, Percent, Ticket, User, X } from "lucide-react";
 import { formatDate } from "@/utils/FormatDate";
+import { useRouter } from "next/router";
+import CouponSkeleton from "./Skeleton";
 
 interface ICustomerLayout {
 	children: React.ReactNode;
@@ -42,13 +44,21 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 		null,
 	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const supabase = useSupabaseClient();
 
 	useEffect(() => {
 		fetchCouponTemplates();
 	}, []);
 
+	const router = useRouter();
+
+	const handleMyRedeemCoupons = () => {
+		router.push("/redeemedCoupons");
+	};
+
 	const fetchCouponTemplates = async () => {
+		setIsLoading(true);
 		try {
 			const { data, error } = await supabase
 				.from("couponTemplate")
@@ -60,6 +70,8 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 		} catch (error) {
 			console.error("Error fetching coupon templates:", error);
 			alert("Failed to fetch coupon templates: " + error.message);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -154,49 +166,75 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 
 	return (
 		<div className="customer-layout bg-[#eee] w-screen min-h-screen flex flex-col py-8 items-center">
-			<Navbar className="max-w-xl mb-4">{children}</Navbar>
+			<Navbar className="max-w-xl mb-4 flex items-center justify-end">
+				{children}
+			</Navbar>
+			<div className="w-full flex gap-2 max-w-xl mb-4 mt-4">
+				<Button
+					size="sm"
+					className=""
+					color="green"
+					onClick={handleMyRedeemCoupons}
+				>
+					Meus cupons
+				</Button>
+
+				<Button
+					className="flex items-center gap-2"
+					color="blue"
+					variant="outlined"
+					size="sm"
+				>
+					<User size={18} />
+					Perfil
+				</Button>
+			</div>
 			<main className="w-full max-w-xl grid grid-cols-1 gap-4 ">
 				<Typography variant="h4" color="blue-gray" className="mb-4">
-					Available Coupons
+					Cupons disponíveis
 				</Typography>
-				{couponTemplates.map((coupon) => (
-					<Card
-						key={coupon.id}
-						className="p-4 mb-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all"
-						onClick={() => handleCouponClick(coupon)}
-					>
-						<div className="flex justify-between items-start">
-							<div>
-								<Typography variant="h5">{coupon.title}</Typography>
-								<Typography variant="small" color="gray" className="mt-1">
-									{getEstablishmentName(coupon.establishment)}
+				{isLoading ? (
+					<CouponSkeleton count={3} />
+				) : (
+					couponTemplates.map((coupon) => (
+						<Card
+							key={coupon.id}
+							className="p-4 mb-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all"
+							onClick={() => handleCouponClick(coupon)}
+						>
+							<div className="flex justify-between items-start">
+								<div>
+									<Typography variant="h5">{coupon.title}</Typography>
+									<Typography variant="small" color="gray" className="mt-1">
+										{getEstablishmentName(coupon.establishment)}
+									</Typography>
+								</div>
+								<Typography
+									variant="h6"
+									color={coupon.type === "value" ? "green" : "blue"}
+									className="font-bold"
+								>
+									{formatValue(coupon)}
 								</Typography>
 							</div>
-							<Typography
-								variant="h6"
-								color={coupon.type === "value" ? "green" : "blue"}
-								className="font-bold"
-							>
-								{formatValue(coupon)}
-							</Typography>
-						</div>
-						<div
-							key={coupon.id}
-							dangerouslySetInnerHTML={{ __html: coupon.description }}
-						/>
-						<div className="flex gap-4 items-center mt-4">
-							<span className="flex items-center text-sm gap-2">
-								<Calendar size={16} />
-								Valid until: {formatDate(coupon.expirationDate)}
-							</span>
+							<div
+								key={coupon.id}
+								dangerouslySetInnerHTML={{ __html: coupon.description }}
+							/>
+							<div className="flex gap-4 items-center mt-4">
+								<span className="flex items-center text-sm gap-2">
+									<Calendar size={16} />
+									Válido até: {formatDate(coupon.expirationDate)}
+								</span>
 
-							<span className="flex items-center text-sm gap-2">
-								<Ticket size={16} />
-								{coupon.amount}
-							</span>
-						</div>
-					</Card>
-				))}
+								<span className="flex items-center text-sm gap-2">
+									<Ticket size={16} />
+									{coupon.amount}
+								</span>
+							</div>
+						</Card>
+					))
+				)}
 			</main>
 
 			<Dialog

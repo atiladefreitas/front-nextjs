@@ -1,12 +1,32 @@
-import { useSession } from "@supabase/auth-helpers-react";
+import React, { useState, useEffect } from "react";
 import Login from "../components/Login";
 import AdminLayout from "@/components/AdminLayout";
 import LogoutButton from "@/components/logoutButton";
 import EstablishmentLayout from "@/components/EstablishmentLayout";
 import CustomerLayout from "@/components/CustomerLayout";
+import { Loader2 } from "lucide-react";
+
+const LoadingScreen = () => (
+	<div className="flex items-center justify-center w-screen h-screen">
+		<Loader2 className="w-8 h-8 animate-spin" />
+	</div>
+);
 
 const Home = () => {
-	const session = useSession();
+	const [isLoading, setIsLoading] = useState(true);
+	const [session, setSession] = useState(null);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsLoading(false);
+		}, 1000);
+
+		return () => clearTimeout(timer);
+	}, []);
+
+	if (isLoading) {
+		return <LoadingScreen />;
+	}
 
 	if (!session) {
 		return <Login />;
