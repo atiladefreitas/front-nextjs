@@ -1,3 +1,4 @@
+import { useSession } from "@supabase/auth-helpers-react";
 import React, { useState, useEffect } from "react";
 import Login from "../components/Login";
 import AdminLayout from "@/components/AdminLayout";
@@ -13,20 +14,19 @@ const LoadingScreen = () => (
 );
 
 const Home = () => {
-	const [isLoading, setIsLoading] = useState(true);
-	const [session, setSession] = useState(null);
-
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setIsLoading(false);
-		}, 1000);
-
-		return () => clearTimeout(timer);
-	}, []);
-
-	if (isLoading) {
-		return <LoadingScreen />;
-	}
+	// useEffect(() => {
+	// 	const timer = setTimeout(() => {
+	// 		setIsLoading(false);
+	// 	}, 1000);
+	//
+	// 	return () => clearTimeout(timer);
+	// }, []);
+	//
+	// if (isLoading) {
+	// 	return <LoadingScreen />;
+	// }
+	//
+	const session = useSession();
 
 	if (!session) {
 		return <Login />;

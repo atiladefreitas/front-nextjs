@@ -7,7 +7,7 @@ import {
 	Dialog,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Calendar, Percent, Ticket, User, X } from "lucide-react";
+import { Calendar, Ticket, User, X } from "lucide-react";
 import { formatDate } from "@/utils/FormatDate";
 import { useRouter } from "next/router";
 import CouponSkeleton from "./Skeleton";
@@ -132,7 +132,6 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 		const token = generateToken();
 
 		try {
-			// Insert into couponRedeem table
 			const { data: redeemData, error: redeemError } = await supabase
 				.from("couponRedeem")
 				.insert({
@@ -157,7 +156,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 
 			alert(`Coupon claimed successfully! Your token is: ${token}`);
 			handleCloseDialog();
-			fetchCouponTemplates(); // Refresh the coupon list
+			fetchCouponTemplates();
 		} catch (error) {
 			console.error("Error claiming coupon:", error);
 			alert("Failed to claim coupon: " + error.message);

@@ -154,8 +154,6 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 	const handleInviteSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		try {
-			// Here you would typically send an invitation email
-			// For now, we'll just log the email and close the modal
 			console.log("Invitation sent to:", inviteEmail);
 			setInviteOpen(false);
 			setInviteEmail("");

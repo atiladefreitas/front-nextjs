@@ -9,7 +9,14 @@ import {
 	Radio,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Calendar, Percent, Edit, TicketPlusIcon, Ticket } from "lucide-react";
+import {
+	Calendar,
+	Percent,
+	Edit,
+	TicketPlusIcon,
+	Ticket,
+	ScanEye,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import { format, parse, isValid } from "date-fns";
@@ -217,7 +224,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			}
 
 			handleClose();
-			fetchCoupons(); // Refresh the coupons list
+			fetchCoupons();
 		} catch (error) {
 			console.error("Error saving coupon:", error);
 			alert("Failed to save coupon: " + error.message);
@@ -229,7 +236,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			<Navbar className="max-w-7xl mb-4 flex items-center justify-end">
 				{children}
 			</Navbar>
-			<div className="w-full mb-4">
+			<div className="w-full mb-4 max-w-7xl flex items-center gap-4">
 				<Button
 					color="green"
 					variant="gradient"
@@ -238,6 +245,15 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				>
 					<TicketPlusIcon />
 					Criar cupom
+				</Button>
+
+				<Button
+					color="blue-gray"
+					variant="gradient"
+					className="flex items-center  gap-2"
+				>
+					<ScanEye />
+					Validar cupom
 				</Button>
 			</div>
 			<main className="w-full max-w-7xl grid grid-cols-2 gap-4 h-full">

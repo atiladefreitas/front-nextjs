@@ -22,17 +22,11 @@ const Login = () => {
 			if (error) throw error;
 
 			if (data && data.user) {
-				// Store user metadata in localStorage
 				const userMetadata = data.user.user_metadata;
 				localStorage.setItem("userMetadata", JSON.stringify(userMetadata));
 
-				console.log(data);
-
-				// Optionally, you can also store other user information
 				localStorage.setItem("userId", data.user.id);
 				localStorage.setItem("userEmail", data.user.email);
-
-				// Redirect to appropriate page based on user role
 			}
 		} catch (error) {
 			alert("Error: " + error.message);
