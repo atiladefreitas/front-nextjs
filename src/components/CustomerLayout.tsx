@@ -11,6 +11,13 @@ import { Calendar, Ticket, User, X } from "lucide-react";
 import { formatDate } from "@/utils/FormatDate";
 import { useRouter } from "next/router";
 import CouponSkeleton from "./Skeleton";
+import Image from "next/image";
+
+import {
+	showErrorAlert,
+	showSuccessAlert,
+	showInfoAlert,
+} from "@/utils/customAlerts";
 
 interface ICustomerLayout {
 	children: React.ReactNode;
@@ -38,26 +45,61 @@ interface CouponTemplate {
 	establishment: string; // JSON string
 }
 
+interface RedeemedCoupon {
+	id: string;
+	coupon_id: string;
+	amount: number;
+	expirationDate: string;
+	user_id: string;
+	user_email: string;
+	user_phone: string;
+	token: string;
+	created_at: string;
+}
+
 function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 	const [couponTemplates, setCouponTemplates] = useState<CouponTemplate[]>([]);
+	const [redeemedCoupons, setRedeemedCoupons] = useState<RedeemedCoupon[]>([]);
 	const [selectedCoupon, setSelectedCoupon] = useState<CouponTemplate | null>(
 		null,
 	);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const supabase = useSupabaseClient();
+	const router = useRouter();
 
 	useEffect(() => {
-		fetchCouponTemplates();
+		fetchRedeemedCoupons();
 	}, []);
-
-	const router = useRouter();
 
 	const handleMyRedeemCoupons = () => {
 		router.push("/redeemedCoupons");
 	};
 
-	const fetchCouponTemplates = async () => {
+	const fetchRedeemedCoupons = async () => {
+		const userId = localStorage.getItem("userId");
+		if (!userId) {
+			alert("User ID not found. Please log in.");
+			return;
+		}
+
+		try {
+			const { data, error } = await supabase
+				.from("couponRedeem")
+				.select("*")
+				.eq("user_id", userId)
+				.order("created_at", { ascending: false });
+
+			if (error) throw error;
+			setRedeemedCoupons(data || []);
+			fetchCouponTemplates(data || []);
+		} catch (error) {
+			console.error("Error fetching redeemed coupons:", error);
+			alert("Failed to fetch redeemed coupons: " + error.message);
+		}
+	};
+
+	const fetchCouponTemplates = async (redeemedCoupons: RedeemedCoupon[]) => {
 		setIsLoading(true);
 		try {
 			const { data, error } = await supabase
@@ -66,7 +108,14 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 				.order("created_at", { ascending: false });
 
 			if (error) throw error;
-			setCouponTemplates(data || []);
+
+			const redeemedCouponIds = new Set(
+				redeemedCoupons.map((coupon) => coupon.coupon_id),
+			);
+			const filteredCouponTemplates =
+				data?.filter((template) => !redeemedCouponIds.has(template.id)) || [];
+
+			setCouponTemplates(filteredCouponTemplates);
 		} catch (error) {
 			console.error("Error fetching coupon templates:", error);
 			alert("Failed to fetch coupon templates: " + error.message);
@@ -161,9 +210,12 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 
 			if (updateError) throw updateError;
 
-			alert(`Coupon claimed successfully! Your token is: ${token}`);
 			handleCloseDialog();
-			fetchCouponTemplates();
+
+			await showSuccessAlert(
+				`Cupom resgatado com sucesso! O seu token é: ${token}`,
+			);
+			fetchRedeemedCoupons(); // Fetch redeemed coupons again to update the list
 		} catch (error) {
 			console.error("Error claiming coupon:", error);
 			alert("Failed to claim coupon: " + error.message);
@@ -172,7 +224,13 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 
 	return (
 		<div className="customer-layout bg-[#eee] w-screen min-h-screen flex flex-col py-8 items-center">
-			<Navbar className="max-w-xl mb-4 flex items-center justify-end">
+			<Navbar className="max-w-xl mb-4 flex items-center justify-between">
+				<Image
+					src="/LOGO_VERMELHA.png"
+					alt="Logomarca vermelha"
+					width={150}
+					height={100}
+				/>
 				{children}
 			</Navbar>
 			<div className="w-full flex gap-2 max-w-xl mb-4 mt-4">
@@ -205,7 +263,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 					couponTemplates.map((coupon) => (
 						<Card
 							key={coupon.id}
-							className="p-4 mb-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all"
+							className="p-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all"
 							onClick={() => handleCouponClick(coupon)}
 						>
 							<div className="flex justify-between items-start">

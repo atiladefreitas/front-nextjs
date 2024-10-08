@@ -66,7 +66,7 @@ function RedeemedCouponsPage() {
 			</div>
 			<main className="w-full max-w-xl grid grid-cols-1 gap-4">
 				{redeemedCoupons.map((coupon) => (
-					<Card key={coupon.id} className="p-4 mb-4">
+					<Card key={coupon.id} className="p-4">
 						<div className="flex justify-between items-start">
 							<div>
 								<Typography variant="h5">Cupom Resgatado</Typography>
@@ -74,12 +74,16 @@ function RedeemedCouponsPage() {
 									ID do Cupom: {coupon.coupon_id}
 								</Typography>
 							</div>
-							{coupon.status === "used" ? (
-								<Chip value="usado" color="green" />
-							) : (
+
+							{coupon.status === "used" && <Chip value="usado" color="green" />}
+							{coupon.status === "redeemed" && (
 								<Typography variant="h6" color="blue" className="font-bold">
 									Token: {coupon.token}
 								</Typography>
+							)}
+
+							{coupon.status === "expired" && (
+								<Chip value="expirado" color="red" />
 							)}
 						</div>
 						<div className="flex gap-4 items-center mt-4">

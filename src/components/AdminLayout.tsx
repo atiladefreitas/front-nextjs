@@ -19,6 +19,7 @@ import { formatDate } from "@/utils/FormatDate";
 import Example from "./charts/LineChat";
 import Example3 from "./charts/BarChart";
 import Example2 from "./charts/LineChat2";
+import Image from "next/image";
 
 interface IAdminLayoutProps {
 	children: React.ReactNode;
@@ -50,7 +51,10 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 		complement: "",
 	});
 	const [couponTemplates, setCouponTemplates] = useState<CouponTemplate[]>([]);
+	const [isEstablishmentSuccess, setIsEstablishmentSuccess] = useState(false);
 	const supabase = useSupabaseClient();
+
+	const [password, setPassword] = useState("");
 
 	const handleOpen = () => setOpen(!open);
 	const handleInviteOpen = () => setInviteOpen(!inviteOpen);
@@ -128,27 +132,31 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 			if (establishmentError) throw establishmentError;
 
 			setEstablishments([...establishments, establishmentData[0]]);
-			setOpen(false);
-			setFormData({
-				name: "",
-				document: "",
-				phone: "",
-				email: "",
-				role: "establishment",
-				postal_code: "",
-				city: "",
-				state: "",
-				neighborhood: "",
-				street: "",
-				number: "",
-				complement: "",
-			});
-
-			alert("Establishment created successfully!");
+			setIsEstablishmentSuccess(true);
 		} catch (error) {
 			console.error("Error creating establishment:", error);
 			alert("Failed to add establishment: " + error.message);
 		}
+	};
+
+	const handleEstablishmentDialogOpen = () => setOpen(true);
+	const handleEstablishmentDialogClose = () => {
+		setOpen(false);
+		setIsEstablishmentSuccess(false);
+		setFormData({
+			name: "",
+			document: "",
+			phone: "",
+			email: "",
+			role: "establishment",
+			postal_code: "",
+			city: "",
+			state: "",
+			neighborhood: "",
+			street: "",
+			number: "",
+			complement: "",
+		});
 	};
 
 	const handleInviteSubmit = async (e: React.FormEvent) => {
@@ -222,7 +230,13 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 
 	return (
 		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
-			<Navbar className="max-w-7xl mb-4 flex items-center justify-end">
+			<Navbar className="max-w-7xl mb-4 flex items-center justify-between">
+				<Image
+					src="/LOGO_VERMELHA.png"
+					alt="Logomarca vermelha"
+					width={150}
+					height={100}
+				/>
 				{children}
 			</Navbar>
 			{/*
@@ -242,11 +256,14 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 			<div className="w-full h-[3rem]  mb-4 max-w-7xl flex gap-4 items-center">
 				<EstablishmentDialog
 					open={open}
-					handleOpen={handleOpen}
+					handleOpen={handleEstablishmentDialogOpen}
+					handleClose={handleEstablishmentDialogClose}
 					formData={formData}
 					handleInputChange={handleInputChange}
 					handleSubmit={handleSubmit}
 					handlePostalCodeChange={handlePostalCodeChange}
+					isSuccess={isEstablishmentSuccess}
+					establishmentPassword={formatString(formData.name)}
 				/>
 				<Button onClick={handleInviteOpen} color="blue">
 					Convidar usuário

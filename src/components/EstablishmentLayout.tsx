@@ -27,6 +27,13 @@ import { formatDate } from "@/utils/FormatDate";
 import { DayPicker } from "react-day-picker";
 import { DateInput } from "@/components/DateInput";
 import "react-day-picker/dist/style.css";
+import Image from "next/image";
+import {
+	showErrorAlert,
+	showSuccessAlert,
+	showInfoAlert,
+	showConfirmationAlert,
+} from "@/utils/customAlerts";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -134,7 +141,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			setCoupons(data || []);
 		} catch (error) {
 			console.error("Error fetching coupons:", error);
-			alert("Failed to fetch coupons: " + error.message);
+			await showErrorAlert("Falha ao carregar cupons: " + error.message);
 		}
 	};
 
@@ -299,6 +306,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			alert("Failed to fetch coupon: " + error.message);
 		}
 	};
+
 	const handleCouponAction = async (action: "used" | "expired") => {
 		try {
 			const { error } = await supabase
@@ -308,10 +316,11 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 
 			if (error) throw error;
 
-			alert(
-				`Coupon ${action === "used" ? "validated" : "invalidated"} successfully.`,
-			);
 			setIsValidateDialogOpen(false);
+
+			await showSuccessAlert(
+				`Cupom ${action === "used" ? "validado" : "invalidado"} com sucesso!.`,
+			);
 			setValidationStep("input");
 			setValidatedCoupon(null);
 			fetchRedeemedCoupons(); // Refresh the list of redeemed coupons
@@ -323,7 +332,13 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 
 	return (
 		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
-			<Navbar className="max-w-7xl mb-4 flex items-center justify-end">
+			<Navbar className="max-w-7xl mb-4 flex items-center justify-between">
+				<Image
+					src="/LOGO_VERMELHA.png"
+					alt="Logomarca vermelha"
+					width={150}
+					height={100}
+				/>
 				{children}
 			</Navbar>
 			<div className="w-full mb-4 max-w-7xl flex items-center gap-4">
@@ -542,9 +557,14 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 								label="Token do Cupom (6 dígitos)"
 								value={tokenInput}
 								onChange={handleTokenInputChange}
-								className="mb-4"
+								size="lg"
 							/>
-							<Button onClick={handleTokenSubmit} color="blue" fullWidth>
+							<Button
+								className="mt-4"
+								onClick={handleTokenSubmit}
+								color="blue"
+								fullWidth
+							>
 								Verificar
 							</Button>
 						</>
@@ -574,21 +594,41 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 									{formatDate(validatedCoupon.created_at)}
 								</Typography>
 							</span>
-							<div className="flex justify-between mt-4">
-								<Button
-									onClick={() => handleCouponAction("expired")}
-									variant="outlined"
-									color="red"
-								>
-									Invalidar
-								</Button>
-								<Button
-									onClick={() => handleCouponAction("used")}
-									color="green"
-								>
-									Aprovar
-								</Button>
-							</div>
+							{validatedCoupon?.status === "used" ? (
+								<>
+									<div className="w-full bg-orange-100 p-2 mt-4 flex items-center justify-center rounded-lg border border-orange-500">
+										<p className="text-orange-900 font-bold">
+											Este cupom já foi utilizado
+										</p>
+									</div>
+									<div className="mt-4">
+										<Button
+											color="red"
+											onClick={() => setIsValidateDialogOpen(false)}
+										>
+											Fechar
+										</Button>
+									</div>
+								</>
+							) : (
+								<>
+									<div className="flex justify-between mt-4">
+										<Button
+											onClick={() => handleCouponAction("expired")}
+											variant="outlined"
+											color="red"
+										>
+											Invalidar
+										</Button>
+										<Button
+											onClick={() => handleCouponAction("used")}
+											color="green"
+										>
+											Aprovar
+										</Button>
+									</div>
+								</>
+							)}
 						</>
 					)}
 				</Card>
