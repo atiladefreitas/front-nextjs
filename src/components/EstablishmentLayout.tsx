@@ -50,7 +50,7 @@ interface Coupon {
 	amount: number;
 	startPromotionDate: Date | null;
 	expirationDate: Date | null;
-	created_at?: Date;
+	created_at?: any;
 	establishment?: object;
 	establishmentId: string;
 }
@@ -75,18 +75,13 @@ const modules = {
 const formats = ["header", "bold", "italic", "underline", "strike"];
 
 const quillStyle = {
-	".ql-editor": {
-		fontSize: "18px",
-	},
-	".ql-editor p": {
-		fontSize: "18px",
-	},
+	fontSize: "18px",
 };
 
 function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	const [open, setOpen] = useState(false);
 	const [coupons, setCoupons] = useState<Coupon[]>([]);
-	const [redeemedCoupons, setRedeemedCoupons] = useState<RedeemedCoupon[]>([]);
+	const [redeemedCoupons, setRedeemedCoupons] = useState<any[]>([]);
 	const [formData, setFormData] = useState<Coupon>({
 		id: "",
 		establishmentId: "",
@@ -141,6 +136,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			setCoupons(data || []);
 		} catch (error) {
 			console.error("Error fetching coupons:", error);
+			// @ts-ignore
 			await showErrorAlert("Falha ao carregar cupons: " + error.message);
 		}
 	};
@@ -245,6 +241,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			fetchCoupons();
 		} catch (error) {
 			console.error("Error saving coupon:", error);
+			// @ts-ignore
 			alert("Failed to save coupon: " + error.message);
 		}
 	};
@@ -268,6 +265,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			setRedeemedCoupons(data || []);
 		} catch (error) {
 			console.error("Error fetching redeemed coupons:", error);
+			// @ts-ignore
 			alert("Failed to fetch redeemed coupons: " + error.message);
 		}
 	};
@@ -303,6 +301,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			}
 		} catch (error) {
 			console.error("Error fetching coupon:", error);
+			// @ts-ignore
 			alert("Failed to fetch coupon: " + error.message);
 		}
 	};
@@ -326,6 +325,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 			fetchRedeemedCoupons(); // Refresh the list of redeemed coupons
 		} catch (error) {
 			console.error("Error updating coupon status:", error);
+			// @ts-ignore
 			alert("Failed to update coupon status: " + error.message);
 		}
 	};

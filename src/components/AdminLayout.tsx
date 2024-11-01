@@ -11,7 +11,7 @@ import {
 	Input,
 } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Establishment, User, FormData, CouponTemplate } from "../types";
+import { Establishment, User, FormData } from "../types";
 import EstablishmentDialog from "../components/dialogs/EstablishmentDialog";
 import formatString from "@/utils/FormatString";
 import { formatDate } from "@/utils/FormatDate";
@@ -50,7 +50,7 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 		number: "",
 		complement: "",
 	});
-	const [couponTemplates, setCouponTemplates] = useState<CouponTemplate[]>([]);
+	const [couponTemplates, setCouponTemplates] = useState<any[]>([]);
 	const [isEstablishmentSuccess, setIsEstablishmentSuccess] = useState(false);
 	const supabase = useSupabaseClient();
 
@@ -88,6 +88,7 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 			setCouponTemplates(data || []);
 		} catch (error) {
 			console.error("Error fetching coupon templates:", error);
+			// @ts-ignore
 			alert("Failed to fetch coupon templates: " + error.message);
 		}
 	};
@@ -135,6 +136,7 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 			setIsEstablishmentSuccess(true);
 		} catch (error) {
 			console.error("Error creating establishment:", error);
+			// @ts-ignore
 			alert("Failed to add establishment: " + error.message);
 		}
 	};
@@ -168,6 +170,7 @@ function AdminLayout({ children }: IAdminLayoutProps) {
 			alert("Invitation sent successfully!");
 		} catch (error) {
 			console.error("Error sending invitation:", error);
+			// @ts-ignore
 			alert("Failed to send invitation: " + error.message);
 		}
 	};

@@ -1,5 +1,6 @@
 export interface Establishment {
 	id: string;
+	user_id: string;
 	name: string;
 	document: string;
 	phone: string;
@@ -20,6 +21,9 @@ export interface User {
 	name: string;
 	email: string;
 	role: string;
+	created_at: string;
+	phone: string | number;
+	document: string | number;
 }
 
 export interface FormData {

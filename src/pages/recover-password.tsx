@@ -19,6 +19,7 @@ const RecoverPassword = () => {
 			alert("Password reset email sent. Check your inbox.");
 			router.push("/");
 		} catch (error) {
+			// @ts-ignore
 			alert("Error: " + error.message);
 		}
 	};

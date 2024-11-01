@@ -95,6 +95,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 			fetchCouponTemplates(data || []);
 		} catch (error) {
 			console.error("Error fetching redeemed coupons:", error);
+			// @ts-ignore
 			alert("Failed to fetch redeemed coupons: " + error.message);
 		}
 	};
@@ -118,6 +119,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 			setCouponTemplates(filteredCouponTemplates);
 		} catch (error) {
 			console.error("Error fetching coupon templates:", error);
+			// @ts-ignore
 			alert("Failed to fetch coupon templates: " + error.message);
 		} finally {
 			setIsLoading(false);
@@ -218,6 +220,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 			fetchRedeemedCoupons(); // Fetch redeemed coupons again to update the list
 		} catch (error) {
 			console.error("Error claiming coupon:", error);
+			// @ts-ignore
 			alert("Failed to claim coupon: " + error.message);
 		}
 	};

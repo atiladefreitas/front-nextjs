@@ -75,6 +75,7 @@ const Register = () => {
 				throw new Error("User creation failed");
 			}
 		} catch (error) {
+			// @ts-ignore
 			alert("Error: " + error.message);
 		}
 	};

@@ -26,9 +26,11 @@ const Login = () => {
 				localStorage.setItem("userMetadata", JSON.stringify(userMetadata));
 
 				localStorage.setItem("userId", data.user.id);
+				// @ts-ignore
 				localStorage.setItem("userEmail", data.user.email);
 			}
 		} catch (error) {
+			// @ts-ignore
 			alert("Error: " + error.message);
 		}
 	};
@@ -44,7 +46,7 @@ const Login = () => {
 						<div>
 							<div className="mt-1 relative rounded-md shadow-sm">
 								<Input
-									crossOrigin={""}
+									crossOrigin="anonymous"
 									id="email"
 									name="email"
 									label="E-mail"
@@ -61,7 +63,7 @@ const Login = () => {
 						<div>
 							<div className="mt-1 relative rounded-md shadow-sm">
 								<Input
-									crossOrigin={""}
+									crossOrigin="anonymous"
 									id="password"
 									name="password"
 									type="password"

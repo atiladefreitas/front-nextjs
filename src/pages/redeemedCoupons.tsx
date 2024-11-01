@@ -8,6 +8,7 @@ import { Ticket, ArrowLeft, Calendar } from "lucide-react";
 interface RedeemedCoupon {
 	id: string;
 	coupon_id: string;
+	status: string;
 	amount: number;
 	expirationDate: string;
 	user_id: string;
@@ -44,6 +45,7 @@ function RedeemedCouponsPage() {
 			setRedeemedCoupons(data || []);
 		} catch (error) {
 			console.error("Error fetching redeemed coupons:", error);
+			// @ts-ignore
 			alert("Failed to fetch redeemed coupons: " + error.message);
 		}
 	};

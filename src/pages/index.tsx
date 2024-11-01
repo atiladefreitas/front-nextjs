@@ -15,23 +15,20 @@ const LoadingScreen = () => (
 
 const Home = () => {
 	const [loading, setLoading] = useState(true);
-	// useEffect(() => {
-	// 	const timer = setTimeout(() => {
-	// 		setIsLoading(false);
-	// 	}, 1000);
-	//
-	// 	return () => clearTimeout(timer);
-	// }, []);
-	//
-	if (loading) {
-		setTimeout(() => {
+	const session = useSession(); // Moved to top level
+
+	useEffect(() => {
+		// Handle loading state with useEffect
+		const timer = setTimeout(() => {
 			setLoading(false);
 		}, 200);
 
+		return () => clearTimeout(timer);
+	}, []);
+
+	if (loading) {
 		return <LoadingScreen />;
 	}
-	//
-	const session = useSession();
 
 	if (!session) {
 		return <Login />;
@@ -41,10 +38,20 @@ const Home = () => {
 
 	return (
 		<section className="w-screen h-screen">
-			{role === "customer" && <CustomerLayout children={<LogoutButton />} />}
-			{role === "admin" && <AdminLayout children={<LogoutButton />} />}
+			{role === "customer" && (
+				<CustomerLayout>
+					<LogoutButton />
+				</CustomerLayout>
+			)}
+			{role === "admin" && (
+				<AdminLayout>
+					<LogoutButton />
+				</AdminLayout>
+			)}
 			{role === "establishment" && (
-				<EstablishmentLayout children={<LogoutButton />} />
+				<EstablishmentLayout>
+					<LogoutButton />
+				</EstablishmentLayout>
 			)}
 		</section>
 	);
