@@ -19,6 +19,7 @@ import {
 	showSuccessAlert,
 	showInfoAlert,
 } from "@/utils/customAlerts";
+import RecentCoupons from "./RecentCoupons";
 
 interface ICustomerLayout {
 	children: React.ReactNode;
@@ -72,6 +73,8 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 	const supabase = useSupabaseClient();
 	const router = useRouter();
 
+	const [recentCoupons, setRecentCoupons] = useState<CouponTemplate[]>([]);
+
 	useEffect(() => {
 		fetchRedeemedCoupons();
 	}, []);
@@ -117,14 +120,21 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 			const redeemedCouponIds = new Set(
 				redeemedCoupons.map((coupon) => coupon.coupon_id),
 			);
-			const filteredCouponTemplates =
+
+			const availableCoupons =
 				data?.filter((template) => !redeemedCouponIds.has(template.id)) || [];
 
-			setCouponTemplates(filteredCouponTemplates);
+			// Set recent coupons (up to 10)
+			setRecentCoupons(availableCoupons.slice(0, 10));
+
+			// Set all coupons
+			setCouponTemplates(availableCoupons);
 		} catch (error) {
 			console.error("Error fetching coupon templates:", error);
-			// @ts-ignore
-			alert("Failed to fetch coupon templates: " + error.message);
+			await showErrorAlert(
+				// @ts-ignore
+				"Failed to fetch coupon templates: " + error.message,
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -230,7 +240,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 	};
 
 	return (
-		<div className="customer-layout bg-[#eee] w-screen min-h-screen flex flex-col py-8 items-center">
+		<div className="customer-layout bg-[#eee] w-screen min-h-screen flex flex-col py-8 px-2 items-center">
 			<Navbar className="max-w-xl mb-4 flex items-center justify-between">
 				<Image
 					src="/LOGO_VERMELHA.png"
@@ -261,6 +271,15 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 				</Button>
 			</div>
 			<main className="w-full max-w-xl grid grid-cols-1 gap-4">
+				{!isLoading && (
+					<RecentCoupons
+						coupons={couponTemplates}
+						formatValue={formatValue}
+						getEstablishmentName={getEstablishmentName}
+						formatDate={formatDate}
+						onCouponClick={handleCouponClick}
+					/>
+				)}
 				<Typography variant="h4" color="blue-gray" className="mb-4">
 					Cupons disponíveis
 				</Typography>
@@ -357,7 +376,6 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 			</main>
 
 			<Dialog
-				size="xs"
 				open={isDialogOpen}
 				handler={handleCloseDialog}
 				className="bg-transparent shadow-none"

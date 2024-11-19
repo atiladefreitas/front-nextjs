@@ -50,30 +50,38 @@ const CouponDialog: React.FC<CouponDialogProps> = ({
 	};
 
 	return (
-		<div className="bg-white rounded-lg overflow-hidden max-h-[90vh] overflow-y-auto">
+		<div className="rounded-lg overflow-hidden max-h-[90vh] overflow-y-auto">
 			<Card className="mx-auto w-full" shadow={false}>
 				{selectedCoupon.banner_url ? (
 					<div className="relative">
+						<div className="absolute w-full flex flex-col justify-between h-full inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+							<div className="flex justify-end p-2">
+								<Button
+									variant="outlined"
+									color="white"
+									onClick={handleCloseDialog}
+									className=""
+								>
+									<X size={16} />
+								</Button>
+							</div>
+							<div className="w-full relative">
+								<div className="bottom-0 left-0 right-0 p-6 text-white">
+									<Typography variant="h3" className="z text-white">
+										{selectedCoupon.title}
+									</Typography>
+									<Typography variant="paragraph" className="mt-2 opacity-80">
+										{getEstablishmentName(selectedCoupon.establishment)}
+									</Typography>
+								</div>
+								<div className="absolute " />
+							</div>
+						</div>
 						<img
 							src={selectedCoupon.banner_url}
 							alt={selectedCoupon.title}
 							className="w-full h-64 object-cover"
 						/>
-						<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-						<div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-							<Typography variant="h3">{selectedCoupon.title}</Typography>
-							<Typography variant="paragraph" className="mt-2 opacity-80">
-								{getEstablishmentName(selectedCoupon.establishment)}
-							</Typography>
-						</div>
-						<Button
-							variant="text"
-							color="white"
-							onClick={handleCloseDialog}
-							className="!fixed top-4 right-4 p-2 z-50"
-						>
-							<X size={24} />
-						</Button>
 					</div>
 				) : (
 					<div className="flex items-center justify-between p-4">
