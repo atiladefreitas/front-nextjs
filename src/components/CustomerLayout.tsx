@@ -12,6 +12,7 @@ import { formatDate } from "@/utils/FormatDate";
 import { useRouter } from "next/router";
 import CouponSkeleton from "./Skeleton";
 import Image from "next/image";
+import CouponDialog from "./CouponDialog";
 
 import {
 	showErrorAlert,
@@ -41,8 +42,11 @@ interface CouponTemplate {
 	amount: number;
 	startPromotionDate: string;
 	expirationDate: string;
+	establishmentId: string;
+	establishment: string;
+	banner_url?: string | null;
+	gallery_images?: string[] | null;
 	created_at?: Date;
-	establishment: string; // JSON string
 }
 
 interface RedeemedCoupon {
@@ -217,7 +221,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 			await showSuccessAlert(
 				`Cupom resgatado com sucesso! O seu token é: ${token}`,
 			);
-			fetchRedeemedCoupons(); // Fetch redeemed coupons again to update the list
+			fetchRedeemedCoupons();
 		} catch (error) {
 			console.error("Error claiming coupon:", error);
 			// @ts-ignore
@@ -256,7 +260,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 					Perfil
 				</Button>
 			</div>
-			<main className="w-full max-w-xl grid grid-cols-1 gap-4 ">
+			<main className="w-full max-w-xl grid grid-cols-1 gap-4">
 				<Typography variant="h4" color="blue-gray" className="mb-4">
 					Cupons disponíveis
 				</Typography>
@@ -266,39 +270,87 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 					couponTemplates.map((coupon) => (
 						<Card
 							key={coupon.id}
-							className="p-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all"
+							className={`p-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all ${
+								coupon.banner_url ? "p-0 overflow-hidden" : ""
+							}`}
 							onClick={() => handleCouponClick(coupon)}
 						>
-							<div className="flex justify-between items-start">
+							{coupon.banner_url ? (
 								<div>
-									<Typography variant="h5">{coupon.title}</Typography>
-									<Typography variant="small" color="gray" className="mt-1">
-										{getEstablishmentName(coupon.establishment)}
-									</Typography>
+									<div className="relative w-full h-[200px]">
+										<img
+											src={coupon.banner_url}
+											alt={coupon.title}
+											className="w-full h-full object-cover"
+										/>
+										<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent p-4">
+											<Typography variant="h5" className="text-white">
+												{coupon.title}
+											</Typography>
+											<Typography
+												variant="small"
+												color="white"
+												className="mt-1 opacity-80"
+											>
+												{getEstablishmentName(coupon.establishment)}
+											</Typography>
+										</div>
+									</div>
+									<div className="py-2 px-4">
+										<div className="flex justify-between items-center">
+											<div className="flex gap-4 items-center">
+												<span className="flex items-center text-sm gap-2">
+													<Calendar size={14} />
+													Válido até: {formatDate(coupon.expirationDate)}
+												</span>
+												<span className="flex items-center text-sm gap-2">
+													<Ticket size={14} />
+													{coupon.amount}
+												</span>
+											</div>
+											<Typography
+												variant="h6"
+												color={coupon.type === "value" ? "green" : "blue"}
+												className="font-bold"
+											>
+												{formatValue(coupon)}
+											</Typography>
+										</div>
+									</div>
 								</div>
-								<Typography
-									variant="h6"
-									color={coupon.type === "value" ? "green" : "blue"}
-									className="font-bold"
-								>
-									{formatValue(coupon)}
-								</Typography>
-							</div>
-							<div
-								key={coupon.id}
-								dangerouslySetInnerHTML={{ __html: coupon.description }}
-							/>
-							<div className="flex gap-4 items-center mt-4">
-								<span className="flex items-center text-sm gap-2">
-									<Calendar size={16} />
-									Válido até: {formatDate(coupon.expirationDate)}
-								</span>
-
-								<span className="flex items-center text-sm gap-2">
-									<Ticket size={16} />
-									{coupon.amount}
-								</span>
-							</div>
+							) : (
+								<div>
+									<div className="flex justify-between items-start">
+										<div>
+											<Typography variant="h5">{coupon.title}</Typography>
+											<Typography variant="small" color="gray" className="mt-1">
+												{getEstablishmentName(coupon.establishment)}
+											</Typography>
+										</div>
+										<Typography
+											variant="h6"
+											color={coupon.type === "value" ? "green" : "blue"}
+											className="font-bold"
+										>
+											{formatValue(coupon)}
+										</Typography>
+									</div>
+									<div
+										className="line-clamp-2 text-sm text-gray-600 my-4"
+										dangerouslySetInnerHTML={{ __html: coupon.description }}
+									/>
+									<div className="flex gap-4 items-center">
+										<span className="flex items-center text-sm gap-2">
+											<Calendar size={16} />
+											Válido até: {formatDate(coupon.expirationDate)}
+										</span>
+										<span className="flex items-center text-sm gap-2">
+											<Ticket size={16} />
+											{coupon.amount}
+										</span>
+									</div>
+								</div>
+							)}
 						</Card>
 					))
 				)}
@@ -308,76 +360,15 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 				size="xs"
 				open={isDialogOpen}
 				handler={handleCloseDialog}
-				className="bg-white p-8"
+				className="bg-transparent shadow-none"
 			>
-				{selectedCoupon && (
-					<Card className="mx-auto w-full" shadow={false}>
-						<div className="flex items-center justify-between">
-							<Typography variant="h5" color="blue-gray">
-								Detalhes
-							</Typography>
-							<Button
-								variant="text"
-								color="blue-gray"
-								onClick={handleCloseDialog}
-								className="p-2"
-							>
-								<X size={20} />
-							</Button>
-						</div>
-						<div className="mt-4">
-							<Typography variant="h4" color="blue-gray">
-								{selectedCoupon.title}
-							</Typography>
-							<Typography variant="small" color="gray" className="mt-1">
-								{getEstablishmentName(selectedCoupon.establishment)}
-							</Typography>
-							<Typography
-								variant="h5"
-								color={selectedCoupon.type === "value" ? "green" : "blue"}
-								className="font-bold mt-2"
-							>
-								{formatValue(selectedCoupon)}
-							</Typography>
-
-							<div
-								key={selectedCoupon.id}
-								dangerouslySetInnerHTML={{ __html: selectedCoupon.description }}
-							/>
-							<div className="mt-4">
-								<Typography variant="small" className="flex items-center gap-2">
-									<Calendar size={16} />
-									Start Date: {formatDate(selectedCoupon.startPromotionDate)}
-								</Typography>
-								<Typography
-									variant="small"
-									className="flex items-center gap-2 mt-1"
-								>
-									<Calendar size={16} />
-									Expiration Date: {formatDate(selectedCoupon.expirationDate)}
-								</Typography>
-							</div>
-							<div className="w-full bg-orange-50 p-2 mt-2 border border-orange-700 rounded-md flex items-center justify-center">
-								<Typography
-									variant="small"
-									className="text-orange-800 font-bold"
-								>
-									RESTAM APENAS {selectedCoupon.amount} CUPONS
-								</Typography>
-							</div>
-						</div>
-						<Button
-							size="lg"
-							color="green"
-							variant="gradient"
-							className="mt-6 flex items-center justify-center"
-							fullWidth
-							onClick={handleClaimCoupon}
-						>
-							Resgatar cupom <Ticket />
-						</Button>
-					</Card>
-				)}
+				<CouponDialog
+					selectedCoupon={selectedCoupon}
+					handleCloseDialog={handleCloseDialog}
+					handleClaimCoupon={handleClaimCoupon}
+					getEstablishmentName={getEstablishmentName}
+					formatValue={formatValue}
+				/>
 			</Dialog>
 		</div>
 	);

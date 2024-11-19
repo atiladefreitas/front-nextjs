@@ -34,6 +34,9 @@ import {
 	showInfoAlert,
 	showConfirmationAlert,
 } from "@/utils/customAlerts";
+import CouponGallery from "./CouponGallery";
+import BannerUpload from "./BannerUpload";
+import GalleryUpload from "./GalleryUpload";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -53,6 +56,8 @@ interface Coupon {
 	created_at?: any;
 	establishment?: object;
 	establishmentId: string;
+	banner_url?: string;
+	gallery_images?: string[];
 }
 
 interface EstablishmentInfo {
@@ -92,6 +97,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 		amount: 0,
 		startPromotionDate: null,
 		expirationDate: null,
+		banner_url: "",
+		gallery_images: [],
 	});
 	const [isEditing, setIsEditing] = useState(false);
 	const supabase = useSupabaseClient();
@@ -103,6 +110,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	const [validationStep, setValidationStep] = useState<"input" | "confirm">(
 		"input",
 	);
+	const [bannerFile, setBannerFile] = useState<File | null>(null);
+	const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
 
 	useEffect(() => {
 		fetchCoupons();
@@ -151,6 +160,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				expirationDate: coupon.expirationDate
 					? new Date(coupon.expirationDate)
 					: null,
+				banner_url: coupon.banner_url || "",
+				gallery_images: coupon.gallery_images || [],
 			});
 			setIsEditing(true);
 		} else {
@@ -164,6 +175,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				amount: 0,
 				startPromotionDate: null,
 				expirationDate: null,
+				banner_url: "",
+				gallery_images: [],
 			});
 			setIsEditing(false);
 		}
@@ -199,6 +212,46 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 		e.preventDefault();
 		try {
 			const userId = localStorage.getItem("userId");
+
+			const {
+				data: { user },
+			} = await supabase.auth.getUser();
+			console.log("User:", user);
+			console.log("User ID:", userId);
+			console.log("User Role:", user?.user_metadata?.role);
+
+			let bannerUrl = "";
+			if (bannerFile) {
+				const bannerFileName = `banners/${Date.now()}-${bannerFile.name}`;
+				const { error: bannerError } = await supabase.storage
+					.from("coupons")
+					.upload(bannerFileName, bannerFile);
+
+				if (bannerError) throw bannerError;
+
+				const {
+					data: { publicUrl },
+				} = supabase.storage.from("coupons").getPublicUrl(bannerFileName);
+
+				bannerUrl = publicUrl;
+			}
+
+			const galleryUrls: string[] = [];
+			for (const file of galleryFiles) {
+				const fileName = `gallery/${Date.now()}-${file.name}`;
+				const { error: uploadError } = await supabase.storage
+					.from("coupons")
+					.upload(fileName, file);
+
+				if (uploadError) throw uploadError;
+
+				const {
+					data: { publicUrl },
+				} = supabase.storage.from("coupons").getPublicUrl(fileName);
+
+				galleryUrls.push(publicUrl);
+			}
+
 			const couponData = {
 				...formData,
 				establishmentId: userId,
@@ -218,6 +271,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 							role: establishmentInfo.role,
 						})
 					: null,
+				banner_url: bannerUrl || null,
+				gallery_images: galleryUrls,
 			};
 
 			if (isEditing) {
@@ -227,14 +282,14 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 					.eq("id", formData.id);
 
 				if (error) throw error;
-				alert("Coupon updated successfully!");
+				await showSuccessAlert("Cupom atualizado com sucesso!");
 			} else {
 				const { error } = await supabase
 					.from("couponTemplate")
 					.insert([{ ...couponData, id: crypto.randomUUID() }]);
 
 				if (error) throw error;
-				alert("Coupon created successfully!");
+				await showSuccessAlert("Cupom criado com sucesso!");
 			}
 
 			handleClose();
@@ -242,7 +297,7 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 		} catch (error) {
 			console.error("Error saving coupon:", error);
 			// @ts-ignore
-			alert("Failed to save coupon: " + error.message);
+			await showErrorAlert("Failed to save coupon: " + error.message);
 		}
 	};
 
@@ -331,8 +386,8 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 	};
 
 	return (
-		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
-			<Navbar className="max-w-7xl mb-4 flex items-center justify-between">
+		<div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center px-4">
+			<Navbar className=" max-w-7xl mb-4 flex items-center justify-between">
 				<Image
 					src="/LOGO_VERMELHA.png"
 					alt="Logomarca vermelha"
@@ -429,112 +484,131 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				</Card>
 			</main>
 
-			<Dialog size="xs" open={open} handler={handleClose}>
-				<Card className="mx-auto w-full" shadow={false}>
-					<form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+			<Dialog size="xl" open={open} handler={handleClose}>
+				<Card className=" w-full" shadow={false}>
+					<form onSubmit={handleSubmit} className="gap-4 p-4 ">
 						<Typography variant="h4" color="blue-gray">
-							{isEditing ? "Edit Coupon" : "Create New Coupon"}
+							{isEditing ? "Editar Cupom" : "Criar novo cupom"}
 						</Typography>
-						<Input
-							crossOrigin={""}
-							label="Titulo"
-							name="title"
-							value={formData.title}
-							onChange={handleInputChange}
-						/>
-						<div className="mb-2">
-							<Typography color="blue-gray" className="font-medium mb-2">
-								Descrição
-							</Typography>
-							<div className="h-52">
-								<ReactQuill
-									theme="snow"
-									value={formData.description}
-									modules={modules}
-									formats={formats}
-									onChange={handleDescriptionChange}
-									className="h-full"
-									style={quillStyle}
+						<div className="grid grid-cols-2 gap-4 mt-4">
+							<div className="flex flex-col gap-4 ">
+								<Input
+									crossOrigin={""}
+									label="Titulo"
+									name="title"
+									value={formData.title}
+									onChange={handleInputChange}
+								/>
+								<div className="mb-2">
+									<Typography color="blue-gray" className="font-medium mb-2">
+										Descrição
+									</Typography>
+									<div className="h-52">
+										<ReactQuill
+											theme="snow"
+											value={formData.description}
+											modules={modules}
+											formats={formats}
+											onChange={handleDescriptionChange}
+											className="h-full"
+											style={quillStyle}
+										/>
+									</div>
+								</div>
+								<div className="items-center gap-4 grid grid-cols-2">
+									<Typography
+										color="blue-gray"
+										className="font-medium col-span-2 -mb-4"
+									>
+										Tipo:
+									</Typography>
+									<Radio
+										crossOrigin={""}
+										name="type"
+										label="Valor"
+										checked={formData.type === "value"}
+										onChange={() => handleTypeChange("value")}
+									/>
+									<Radio
+										crossOrigin={""}
+										name="type"
+										label="Porcentagem"
+										checked={formData.type === "percentage"}
+										onChange={() => handleTypeChange("percentage")}
+									/>
+								</div>
+								<div className="relative flex items-center justify-center">
+									{formData.type === "value" && (
+										<div className="h-[2.5rem] bg-gray-200 w-[3rem] flex items-center justify-center rounded-l-md border-l border-[#c4c4c4] border-t border-b">
+											<span className="font-semibold">R$</span>
+										</div>
+									)}
+									<Input
+										crossOrigin={""}
+										label="Valor"
+										name="value"
+										type="number"
+										value={formData.value}
+										onChange={handleInputChange}
+										className={
+											formData.type === "value"
+												? "rounded-l-none"
+												: "rounded-r-none"
+										}
+									/>
+									{formData.type === "percentage" && (
+										<div className="h-[2.5rem] bg-gray-200 w-fit px-3 flex items-center justify-center rounded-r-md border-r border-[#c4c4c4] border-t border-b">
+											<span className="flex items-center gap-1 font-semibold">
+												<Percent size={18} />
+												OFF
+											</span>
+										</div>
+									)}
+								</div>
+								<Input
+									crossOrigin={""}
+									label="Quantidade"
+									name="amount"
+									type="number"
+									value={formData.amount}
+									onChange={handleInputChange}
+								/>
+								<span className="w-full flex gap-4">
+									<DateInput
+										label="Início da promoção"
+										name="startPromotionDate"
+										selected={formData.startPromotionDate}
+										onChange={(date) =>
+											handleDateChange(date, "startPromotionDate")
+										}
+									/>
+									<DateInput
+										label="Data de expiração"
+										name="expirationDate"
+										selected={formData.expirationDate}
+										onChange={(date) =>
+											handleDateChange(date, "expirationDate")
+										}
+									/>
+								</span>
+							</div>
+
+							<div className="flex flex-col gap-4">
+								<BannerUpload
+									currentBanner={formData.banner_url}
+									onBannerChange={(file) => setBannerFile(file)}
+								/>
+
+								<GalleryUpload
+									onImagesChange={(files) => setGalleryFiles(files)}
 								/>
 							</div>
 						</div>
-						<div className="items-center gap-4 grid grid-cols-2">
-							<Typography
-								color="blue-gray"
-								className="font-medium col-span-2 -mb-4"
-							>
-								Tipo:
-							</Typography>
-							<Radio
-								crossOrigin={""}
-								name="type"
-								label="Valor"
-								checked={formData.type === "value"}
-								onChange={() => handleTypeChange("value")}
-							/>
-							<Radio
-								crossOrigin={""}
-								name="type"
-								label="Porcentagem"
-								checked={formData.type === "percentage"}
-								onChange={() => handleTypeChange("percentage")}
-							/>
+						<div className="mt-2 flex justify-end">
+							<Button type="submit" color="blue" variant="gradient">
+								{isEditing ? "Atualizar cupom" : "Criar cupom"}
+							</Button>
 						</div>
-						<div className="relative flex items-center justify-center">
-							{formData.type === "value" && (
-								<div className="h-[2.5rem] bg-gray-200 w-[3rem] flex items-center justify-center rounded-l-md border-l border-[#c4c4c4] border-t border-b">
-									<span className="font-semibold">R$</span>
-								</div>
-							)}
-							<Input
-								crossOrigin={""}
-								label="Valor"
-								name="value"
-								type="number"
-								value={formData.value}
-								onChange={handleInputChange}
-								className={
-									formData.type === "value"
-										? "rounded-l-none"
-										: "rounded-r-none"
-								}
-							/>
-							{formData.type === "percentage" && (
-								<div className="h-[2.5rem] bg-gray-200 w-fit px-3 flex items-center justify-center rounded-r-md border-r border-[#c4c4c4] border-t border-b">
-									<span className="flex items-center gap-1 font-semibold">
-										<Percent size={18} />
-										OFF
-									</span>
-								</div>
-							)}
-						</div>
-						<Input
-							crossOrigin={""}
-							label="Quantidade"
-							name="amount"
-							type="number"
-							value={formData.amount}
-							onChange={handleInputChange}
-						/>
-						<span className="w-full flex gap-4">
-							<DateInput
-								label="Início da promoção"
-								name="startPromotionDate"
-								selected={formData.startPromotionDate}
-								onChange={(date) =>
-									handleDateChange(date, "startPromotionDate")
-								}
-							/>
-							<DateInput
-								label="Data de expiração"
-								name="expirationDate"
-								selected={formData.expirationDate}
-								onChange={(date) => handleDateChange(date, "expirationDate")}
-							/>
-						</span>
-						<Button type="submit" color="blue" variant="gradient">
-							{isEditing ? "Atualizar cupom" : "Criar cupom"}
-						</Button>
 					</form>
 				</Card>
 			</Dialog>
@@ -544,9 +618,9 @@ function EstablishmentLayout({ children }: IEstablishmentLayout): JSX.Element {
 				size="xs"
 				open={isValidateDialogOpen}
 				handler={() => setIsValidateDialogOpen(false)}
-				className="bg-white p-8"
+				className="bg-white p-8 "
 			>
-				<Card className="mx-auto w-full" shadow={false}>
+				<Card className="mx-auto w-full " shadow={false}>
 					{validationStep === "input" ? (
 						<>
 							<Typography variant="h5" color="blue-gray" className="mb-4">

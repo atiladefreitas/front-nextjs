@@ -11,7 +11,8 @@ import {
 	Check,
 	X,
 } from "lucide-react";
-import { Input } from "@material-tailwind/react";
+import { Input, Typography } from "@material-tailwind/react";
+import ImageUpload from "@/components/ImageUpload";
 
 const Register = () => {
 	const [email, setEmail] = useState("");
@@ -22,12 +23,18 @@ const Register = () => {
 	const [document, setDocument] = useState("");
 	const [phone, setPhone] = useState("");
 	const [passwordsMatch, setPasswordsMatch] = useState(false);
+	const [avatarUrl, setAvatarUrl] = useState("");
+
 	const supabase = useSupabaseClient();
 	const router = useRouter();
 
 	useEffect(() => {
 		setPasswordsMatch(password === confirmPassword && password !== "");
 	}, [password, confirmPassword]);
+
+	const handleAvatarUpload = (url: string) => {
+		setAvatarUrl(url);
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -49,6 +56,7 @@ const Register = () => {
 						document,
 						phone,
 						role: "customer",
+						avatar_url: avatarUrl,
 					},
 				},
 			});
@@ -101,7 +109,21 @@ const Register = () => {
 				<div className="bg-white py-8 px-4 shadow-xl rounded-lg ">
 					<form className="space-y-6" onSubmit={handleSubmit}>
 						<div>
-							<div className="mt-1 relative rounded-md shadow-sm">
+							<div className="mt-4 ">
+								<Typography variant="small" className="mb-2">
+									Imagem de perfil
+								</Typography>
+								<ImageUpload
+									bucketName="avatars"
+									path={`users/${new Date().getTime()}`}
+									onUploadComplete={handleAvatarUpload}
+									maxSize={2}
+									aspectRatio={1}
+									maxWidth={1000}
+									maxHeight={1000}
+								/>
+							</div>
+							<div className="mt-4 relative rounded-md shadow-sm">
 								<Input
 									crossOrigin={""}
 									icon={<Mail className="h-5 w-5 text-gray-400" />}
