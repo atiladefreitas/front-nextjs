@@ -270,7 +270,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
 					couponTemplates.map((coupon) => (
 						<Card
 							key={coupon.id}
-							className={`p-4 cursor-pointer hover:shadow-xl duration-200 hover:-translate-y-1 hover:scale-105 transition-all ${
+							className={`p-4 cursor-pointer hover:shadow-xl border border-[#c4c4c4]/60 duration-200 hover:-translate-y-1 hover:scale-105 transition-all ${
 								coupon.banner_url ? "p-0 overflow-hidden" : ""
 							}`}
 							onClick={() => handleCouponClick(coupon)}

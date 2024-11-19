@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, Typography, Button, Carousel } from "@material-tailwind/react";
-import { X, Calendar, Ticket } from "lucide-react";
+import { X, Calendar, Ticket, Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/FormatDate";
+import Image from "next/image";
 
 interface CouponTemplate {
 	id: string;
@@ -34,7 +35,19 @@ const CouponDialog: React.FC<CouponDialogProps> = ({
 	getEstablishmentName,
 	formatValue,
 }) => {
+	const [imagesLoaded, setImagesLoaded] = useState(false);
+
 	if (!selectedCoupon) return null;
+
+	const galleryImages = Array.isArray(selectedCoupon.gallery_images)
+		? selectedCoupon.gallery_images
+		: typeof selectedCoupon.gallery_images === "string"
+			? JSON.parse(selectedCoupon.gallery_images || "[]")
+			: [];
+
+	const handleImagesLoad = () => {
+		setImagesLoaded(true);
+	};
 
 	return (
 		<div className="bg-white rounded-lg overflow-hidden max-h-[90vh] overflow-y-auto">
@@ -57,7 +70,7 @@ const CouponDialog: React.FC<CouponDialogProps> = ({
 							variant="text"
 							color="white"
 							onClick={handleCloseDialog}
-							className="absolute top-4 right-4 p-2"
+							className="!fixed top-4 right-4 p-2 z-50"
 						>
 							<X size={24} />
 						</Button>
@@ -103,88 +116,33 @@ const CouponDialog: React.FC<CouponDialogProps> = ({
 						dangerouslySetInnerHTML={{ __html: selectedCoupon.description }}
 					/>
 
-					{Array.isArray(selectedCoupon.gallery_images) &&
-						selectedCoupon.gallery_images.length > 0 && (
-							<div className="w-full h-64 my-4">
-								<Carousel
-									className="rounded-xl"
-									prevArrow={({ handlePrev }) => (
-										<Button
-											variant="text"
-											color="white"
-											size="lg"
-											onClick={handlePrev}
-											className="!absolute top-2/4 left-4 -translate-y-2/4"
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												fill="none"
-												viewBox="0 0 24 24"
-												strokeWidth={2}
-												stroke="currentColor"
-												className="h-6 w-6"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-												/>
-											</svg>
-										</Button>
-									)}
-									nextArrow={({ handleNext }) => (
-										<Button
-											variant="text"
-											color="white"
-											size="lg"
-											onClick={handleNext}
-											className="!absolute top-2/4 !right-4 -translate-y-2/4"
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												fill="none"
-												viewBox="0 0 24 24"
-												strokeWidth={2}
-												stroke="currentColor"
-												className="h-6 w-6"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-												/>
-											</svg>
-										</Button>
-									)}
-									navigation={({ setActiveIndex, activeIndex, length }) => (
-										<div className="absolute bottom-4 left-2/4 z-50 flex -translate-x-2/4 gap-2">
-											{new Array(length).fill("").map((_, i) => (
-												<span
-													key={i}
-													className={`block h-1 cursor-pointer rounded-2xl transition-all content-[''] ${
-														activeIndex === i
-															? "w-8 bg-white"
-															: "w-4 bg-white/50"
-													}`}
-													onClick={() => setActiveIndex(i)}
-												/>
-											))}
-										</div>
-									)}
-								>
-									{selectedCoupon.gallery_images.map(
-										(image: string, index: number) => (
-											<img
-												key={index}
-												src={image}
-												alt={`Gallery ${index + 1}`}
-												className="h-full w-full object-cover"
-											/>
-										),
-									)}
-								</Carousel>
-							</div>
-						)}
+					{galleryImages.length > 0 && (
+						<div className="relative mt-2">
+							{!imagesLoaded && (
+								<div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-2xl">
+									<Loader2 className="w-8 h-8 animate-spin text-gray-600" />
+								</div>
+							)}
+							<Carousel
+								className="rounded-2xl"
+								autoplay
+								autoplayDelay={3000}
+								loop
+								navigation={({ setActiveIndex, activeIndex, length }) => null}
+								onLoad={handleImagesLoad}
+							>
+								{galleryImages.map((image: string, index: number) => (
+									<img
+										key={index}
+										src={image}
+										alt={`Gallery image ${index + 1}`}
+										className="h-[300px] w-full object-cover"
+										onLoad={handleImagesLoad}
+									/>
+								))}
+							</Carousel>
+						</div>
+					)}
 
 					<div className="mt-4">
 						<Typography variant="small" className="flex items-center gap-2">
