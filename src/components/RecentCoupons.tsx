@@ -31,10 +31,8 @@ const FeaturedCoupons = ({
   coupons,
   formatValue,
   getEstablishmentName,
-  formatDate,
   onCouponClick,
 }: CouponsProps) => {
-  // Only include coupons that have a non-null, non-undefined banner_url
   const featuredCoupons = coupons.filter(
     (coupon): coupon is Coupon & { banner_url: string } =>
       Boolean(coupon.banner_url),
