@@ -51,7 +51,7 @@ const CouponDialog: React.FC<CouponDialogProps> = ({
 
   return (
     <div className="rounded-md overflow-hidden max-h-[90vh] overflow-y-auto">
-      <Card className="mx-auto w-full" shadow={false}>
+      <Card className="mx-auto w-[60%] overflow-hidden" shadow={false}>
         {selectedCoupon.banner_url ? (
           <div className="relative">
             <div className="absolute w-full flex flex-col justify-between h-full inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">

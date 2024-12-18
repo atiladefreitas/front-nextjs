@@ -20,6 +20,8 @@ import {
   showInfoAlert,
 } from "@/utils/customAlerts";
 import RecentCoupons from "./RecentCoupons";
+import { CarouselCoupons as CarouselSpacing } from "./CouponsCarousel";
+import { CarouselDemo } from "./MainCarousel";
 
 interface ICustomerLayout {
   children: React.ReactNode;
@@ -239,58 +241,69 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
   };
 
   return (
-    <div className="customer-layout bg-[#eee] w-screen min-h-screen flex flex-col py-4 px-2 items-center">
-      <Navbar className="max-w-6xl mb-4 flex items-center justify-between rounded-md shadow-sm">
-        <Image
-          src="/LOGO_VERMELHA.png"
-          alt="Logomarca vermelha"
-          width={150}
-          height={100}
-        />
-        {children}
-      </Navbar>
-      <div className="w-full flex gap-2 max-w-6xl mb-4 mt-2">
+    <div className="customer-layout bg-[#eee] w-screen min-h-screen flex flex-col items-center">
+      <nav className="w-full bg-[#be1e2f] flex items-center justify-center min-h-[6rem] mb-6">
+        <div className="w-full max-w-5xl flex items-center justify-between h-full">
+          <Image
+            src="/OBEMDITO.png"
+            alt="Logomarca branca"
+            width={200}
+            height={100}
+          />
+          {children}
+        </div>
+      </nav>
+      <div className="w-full flex gap-2 max-w-5xl mb-6">
         <Button
-          size="sm"
-          className=""
+          className="flex items-center gap-2 rounded-md"
           color="green"
           onClick={handleMyRedeemCoupons}
         >
+          <Ticket size={16} className="rotate-90" />
           Meus cupons
         </Button>
 
         <Button
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 rounded-md"
           color="blue"
           variant="outlined"
-          size="sm"
         >
           <User size={18} />
           Perfil
         </Button>
       </div>
-      <main className="w-full max-w-6xl grid grid-cols-1 gap-4">
+      <main className="w-full max-w-5xl grid grid-cols-1 gap-4">
+        <CarouselDemo />
         {!isLoading && (
-          <RecentCoupons
-            coupons={couponTemplates}
-            formatValue={formatValue}
-            getEstablishmentName={getEstablishmentName}
-            formatDate={formatDate}
-            onCouponClick={handleCouponClick}
-          />
+          <>
+            <CarouselSpacing
+              coupons={couponTemplates}
+              formatValue={formatValue}
+              getEstablishmentName={getEstablishmentName}
+              formatDate={formatDate}
+              onCouponClick={handleCouponClick}
+            />
+            <RecentCoupons
+              coupons={couponTemplates}
+              formatValue={formatValue}
+              getEstablishmentName={getEstablishmentName}
+              formatDate={formatDate}
+              onCouponClick={handleCouponClick}
+            />
+          </>
         )}
         <Typography variant="h4" color="blue-gray" className="mb-4">
           Cupons disponíveis
         </Typography>
 
-        <div className="w-full grid grid-cols-3">
+        <div className="w-full grid h-full grid-cols-1 md:grid-cols-3 gap-2">
           {isLoading ? (
             <CouponSkeleton count={3} />
           ) : (
             couponTemplates.map((coupon) => (
               <Card
                 key={coupon.id}
-                className={`p-4 cursor-pointer hover:shadow-xl border border-[#c4c4c4]/60 duration-200 hover:-translate-y-1 hover:scale-105 transition-all ${
+                className={`p-4 cursor-pointer rounded-md hover:shadow-xl border border-[#c4c4c4]/60 duration-200 hover:-translate-y-1 hover:scale-105 transition-all ${
                   coupon.banner_url ? "p-0 overflow-hidden" : ""
                 }`}
                 onClick={() => handleCouponClick(coupon)}
@@ -303,6 +316,17 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
                         alt={coupon.title}
                         className="w-full h-full object-cover"
                       />
+                      <span
+                        className={`absolute top-2 right-2 py-1 px-4 rounded-md ${coupon.type === "value" ? "bg-green-500" : "bg-blue-500"}`}
+                      >
+                        <Typography
+                          variant="h6"
+                          color={"white"}
+                          className="font-bold"
+                        >
+                          {formatValue(coupon)}
+                        </Typography>
+                      </span>
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent p-4">
                         <Typography variant="h5" className="text-white">
                           {coupon.title}
@@ -315,27 +339,17 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
                           {getEstablishmentName(coupon.establishment)}
                         </Typography>
                       </div>{" "}
-                      classNamew-full grid grid-cols-3
                     </div>
                     <div className="py-2 px-4">
-                      <div className="flex justify-between items-center">
-                        <div className="flex gap-4 items-center">
-                          <span className="flex items-center text-sm gap-2">
-                            <Calendar size={14} />
-                            Válido até: {formatDate(coupon.expirationDate)}
-                          </span>
-                          <span className="flex items-center text-sm gap-2">
-                            <Ticket size={14} />
-                            {coupon.amount}
-                          </span>
-                        </div>
-                        <Typography
-                          variant="h6"
-                          color={coupon.type === "value" ? "green" : "blue"}
-                          className="font-bold"
-                        >
-                          {formatValue(coupon)}
-                        </Typography>
+                      <div className="flex gap-2 items-center justify-between">
+                        <span className="flex items-center  text-sm gap-2">
+                          <Calendar size={14} />
+                          Válido até: {formatDate(coupon.expirationDate)}
+                        </span>
+                        <span className="flex items-center text-sm gap-1">
+                          <Ticket size={16} className="rotate-90" />
+                          {coupon.amount}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -381,6 +395,16 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
           )}
         </div>
       </main>
+      <footer className="bg-[#404040] w-full mt-12 min-h-[10rem] flex items-center justify-center">
+        <div className="max-w-5xl w-full">
+          <Image
+            src="/OBEMDITO.png"
+            alt="Logomarca branca"
+            width={200}
+            height={100}
+          />
+        </div>
+      </footer>
 
       <Dialog
         open={isDialogOpen}

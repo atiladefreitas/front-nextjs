@@ -41,16 +41,16 @@ const FeaturedCoupons = ({
   if (!featuredCoupons.length) return null;
 
   return (
-    <div className="w-full max-w-xl mb-4">
+    <div className="w-full flex flex-col md:hidden max-w-xl mb-4">
       <Typography variant="h5" color="blue-gray" className="mb-4">
         Cupons em destaque
       </Typography>
       <div>
-        <Carousel className="rounded-2xl" autoplay autoplayDelay={3000} loop>
+        <Carousel className="rounded-md" autoplay autoplayDelay={3000} loop>
           {featuredCoupons.slice(0, 10).map((coupon) => (
             <Card
               key={coupon.id}
-              className="cursor-pointer hover:shadow-xl border border-[#c4c4c4]/60 duration-200 hover:-translate-y-1 transition-all overflow-hidden"
+              className="cursor-pointer hover:shadow-xl border border-[#c4c4c4]/60 duration-200 hover:-translate-y-1 transition-all overflow-hidden rounded-md"
               onClick={() => onCouponClick(coupon)}
             >
               <div className="relative">
@@ -80,7 +80,9 @@ const RecentCoupons: React.FC<CouponsProps> = (props) => {
   return (
     <>
       <FeaturedCoupons {...props} />
+      {/*
       <InfiniteScrollCoupons {...props} />
+      */}
     </>
   );
 };
