@@ -53,7 +53,7 @@ export function CarouselCoupons({
   return (
     <div className="w-full max-w-6xl mb-4 hidden md:flex md:flex-col">
       <Typography variant="h4" color="blue-gray" className="mb-4">
-        Cupons em destaqueeee
+        Cupons em destaque
       </Typography>
       <Carousel
         className="w-full rounded-md"
