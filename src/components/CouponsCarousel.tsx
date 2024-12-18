@@ -53,13 +53,14 @@ export function CarouselCoupons({
   return (
     <div className="w-full max-w-6xl mb-4 hidden md:flex md:flex-col">
       <Typography variant="h4" color="blue-gray" className="mb-4">
-        Cupons em destaque
+        Cupons em destaqueeee
       </Typography>
       <Carousel
         className="w-full rounded-md"
         plugins={[plugin.current]}
         onMouseEnter={plugin.current.stop}
         onMouseLeave={plugin.current.reset}
+        opts={{ loop: true }}
       >
         <CarouselContent className="-ml-2">
           {featuredCoupons.slice(0, 10).map((coupon) => (

@@ -23,6 +23,7 @@ export function CarouselDemo() {
         plugins={[plugin.current]}
         onMouseEnter={plugin.current.stop}
         onMouseLeave={plugin.current.reset}
+        opts={{ loop: true }}
       >
         <CarouselContent className="h-[20rem]">
           {Array.from({ length: 5 }).map((_, index) => (
