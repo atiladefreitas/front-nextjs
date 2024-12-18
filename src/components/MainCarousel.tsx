@@ -26,9 +26,9 @@ export function CarouselDemo() {
       >
         <CarouselContent className="h-[20rem]">
           {Array.from({ length: 5 }).map((_, index) => (
-            <CarouselItem key={index} className="rounded-md overflow-hidden">
-              <div className="p-1 h-full overflow-hidden rounded-md">
-                <img src="/ana.webp" className="rounded-md" />
+            <CarouselItem key={index} className="overflow-hidden">
+              <div className="p-1 h-full overflow-hidden">
+                <img src="/ana.webp" className="" />
               </div>
             </CarouselItem>
           ))}

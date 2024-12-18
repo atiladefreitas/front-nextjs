@@ -267,6 +267,7 @@ function CustomerLayout({ children }: ICustomerLayout): JSX.Element {
           className="flex items-center gap-2 rounded-md"
           color="blue"
           variant="outlined"
+          onClick={() => router.push("/profile")}
         >
           <User size={18} />
           Perfil
