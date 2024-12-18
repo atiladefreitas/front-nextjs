@@ -19,6 +19,7 @@ import { formatDate } from "@/utils/FormatDate";
 import Image from "next/image";
 import EstablishmentInfo from "./EstablishmentInfo";
 import CouponList from "./CouponList";
+import LogoutButton from "./logoutButton";
 
 interface IAdminLayoutProps {
   children: React.ReactNode;
@@ -231,15 +232,15 @@ function AdminLayout({ children }: IAdminLayoutProps) {
   };
 
   return (
-    <div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col py-8 items-center ">
-      <Navbar className="max-w-7xl mb-4 flex items-center justify-between">
+    <div className="admin-layout bg-[#eee] w-screen h-screen flex flex-col pb-8 pt-2 items-center ">
+      <Navbar className="max-w-7xl mb-4 flex items-center justify-between rounded-md ">
         <Image
           src="/LOGO_VERMELHA.png"
           alt="Logomarca vermelha"
           width={150}
           height={100}
         />
-        {children}
+        <LogoutButton color="red" />
       </Navbar>
 
       <div className="w-full h-[3rem]  mb-4 max-w-7xl flex gap-4 items-center">
@@ -259,7 +260,7 @@ function AdminLayout({ children }: IAdminLayoutProps) {
         </Button>
       </div>
       <main className="w-full max-w-7xl grid grid-cols-2 gap-4 h-full">
-        <Card className="establishments-list p-4">
+        <Card className="establishments-list p-4 rounded-md">
           <Typography variant="h5" color="blue-gray" className="mb-4">
             Estabelecimentos
           </Typography>
@@ -282,7 +283,7 @@ function AdminLayout({ children }: IAdminLayoutProps) {
           ))}
         </Card>
 
-        <Card className="users-list p-4">
+        <Card className="users-list p-4 rounded-md">
           <Typography variant="h5" color="blue-gray" className="mb-4">
             Usuários
           </Typography>

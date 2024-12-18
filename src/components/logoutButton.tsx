@@ -2,12 +2,16 @@ import { Button } from "@material-tailwind/react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { LogOut } from "lucide-react";
 
-const LogoutButton = () => {
+interface ILogoutButton {
+  color?: "white" | "red";
+}
+
+const LogoutButton = ({ color = "white" }: ILogoutButton) => {
   const supabase = useSupabaseClient();
 
   return (
     <Button
-      color="white"
+      color={color}
       variant="text"
       size="sm"
       onClick={() => supabase.auth.signOut()}
