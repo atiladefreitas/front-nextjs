@@ -39,16 +39,16 @@ export function CarouselCoupons({
   getEstablishmentName,
   onCouponClick,
 }: CouponsProps) {
+  const plugin = React.useRef(
+    Autoplay({ delay: 2000, stopOnInteraction: true }),
+  );
+
   const featuredCoupons = coupons.filter(
     (coupon): coupon is Coupon & { banner_url: string } =>
       Boolean(coupon.banner_url),
   );
 
   if (!featuredCoupons.length) return null;
-
-  const plugin = React.useRef(
-    Autoplay({ delay: 2000, stopOnInteraction: true }),
-  );
 
   return (
     <div className="w-full max-w-6xl mb-4 hidden md:flex md:flex-col">
